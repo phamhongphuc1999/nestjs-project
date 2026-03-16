@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { AppConfigs } from './configs';
+import { AppConfigs } from './configs/app.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -10,7 +10,7 @@ async function bootstrap() {
     .setTitle('My API')
     .setDescription('API documentation')
     .setVersion('1.0')
-    .addBearerAuth() // for JWT auth
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

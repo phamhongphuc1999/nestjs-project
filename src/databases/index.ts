@@ -1,6 +1,6 @@
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import path from 'path';
-import { AppConfigs } from 'src/configs';
+import { AppConfigs } from 'src/configs/app.config';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import * as entities from '../entities';
 
