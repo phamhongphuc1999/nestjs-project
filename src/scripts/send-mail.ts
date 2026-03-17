@@ -1,4 +1,6 @@
 import { NestFactory } from '@nestjs/core';
+import { SEND_EMAIL_TYPE } from 'src/types/global';
+import { generateEmailVerifyToken } from 'src/utils/jwt';
 import { MailModule } from '../services/mail.service/mail.module';
 import { MailService } from '../services/mail.service/mail.service';
 
@@ -6,7 +8,14 @@ async function bootstrap() {
   const app = await NestFactory.createApplicationContext(MailModule);
   const mailService = app.get(MailService);
 
-  await mailService.sendUserWelcome('test@example.com', 'Peter');
+  const verificationToken = generateEmailVerifyToken({
+    verifyEmailUserId: '1',
+  });
+  await mailService.sendEmail(SEND_EMAIL_TYPE.VERIFY, {
+    to: 'test@example.com',
+    name: 'Peter',
+    token: verificationToken,
+  });
 
   console.log('Mail sent successfully! Check http://localhost:8025');
 

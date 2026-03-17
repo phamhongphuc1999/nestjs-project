@@ -15,6 +15,11 @@ const AppConfigs = {
     USER: process.env.MAIL_USER,
     PASSWORD: process.env.MAIL_PASSWORD,
   },
+  JWT_SECRET: process.env.JWT_SECRET || '',
+  JWT_EXPIRE_TIME: process.env.JWT_EXPIRE_TIME || '',
+  EMAIL_VERIFY_SECRET: process.env.EMAIL_VERIFY_SECRET || '',
+  EMAIL_VERIFY_EXPIRE_TIME: process.env.EMAIL_VERIFY_EXPIRE_TIME || '',
+  FRONTEND_URL: process.env.FRONTEND_URL || '',
 };
 
 export { AppConfigs };
