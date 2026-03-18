@@ -32,6 +32,8 @@ export class GoogleSigninDto {
   idToken: string;
 }
 
+export class GoogleRecoverPasswordDto extends GoogleSigninDto {}
+
 export class PasswordLoginDto {
   @ApiProperty({
     type: String,
@@ -53,4 +55,16 @@ export class VerifyTokenDto {
   @ApiProperty({ type: String, description: 'Token' })
   @IsNotEmpty()
   token: string;
+}
+
+export class RecoverTokenDto extends VerifyTokenDto {
+  @ApiProperty({ type: String, description: 'New password' })
+  @IsStrongPassword({
+    minLength: 8,
+    minLowercase: 1,
+    minUppercase: 1,
+    minNumbers: 1,
+    minSymbols: 1,
+  })
+  newPassword: string;
 }

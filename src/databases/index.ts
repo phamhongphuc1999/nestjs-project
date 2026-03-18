@@ -14,7 +14,8 @@ const postgresConfig: TypeOrmModuleOptions & DataSourceOptions = {
   synchronize: true,
 
   entities: Object.values(entities),
-  migrations: [path.join(__dirname, '/../migrations/*.{ts}')],
+  // migrations: [path.join(__dirname, '/../migrations/*.{ts}')],
+  migrations: [path.join(__dirname, '/../migrations/*.{sql}')],
 };
 
 const PostgresDataSource = new DataSource(postgresConfig);

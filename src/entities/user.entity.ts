@@ -15,6 +15,6 @@ export class User {
   @Column()
   email: string;
 
-  @Column()
+  @Column({ type: 'int', default: USER_STATUS.EMAIL_INACTIVE })
   status: USER_STATUS;
 }
