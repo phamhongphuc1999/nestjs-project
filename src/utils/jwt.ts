@@ -30,12 +30,12 @@ export function generateEmailVerifyToken(data: string | object | Buffer<ArrayBuf
   return jwt.sign(data, secret, signOptions);
 }
 
-export const verifyEmailToken = (token: string): jwt.JwtPayload => {
+export function verifyEmailToken<T = unknown>(token: string): T & jwt.JwtPayload {
   try {
     const decodedToken = jwt.verify(token, AppConfigs.EMAIL_VERIFY_SECRET) as jwt.JwtPayload;
 
-    return decodedToken;
+    return decodedToken as T & jwt.JwtPayload;
   } catch {
     throw new UnauthorizedException('Invalid token');
   }
-};
+}

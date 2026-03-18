@@ -20,6 +20,7 @@ const AppConfigs = {
   EMAIL_VERIFY_SECRET: process.env.EMAIL_VERIFY_SECRET || '',
   EMAIL_VERIFY_EXPIRE_TIME: process.env.EMAIL_VERIFY_EXPIRE_TIME || '',
   FRONTEND_URL: process.env.FRONTEND_URL || '',
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
 };
 
 export { AppConfigs };

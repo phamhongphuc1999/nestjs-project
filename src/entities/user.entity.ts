@@ -1,4 +1,4 @@
-import { EMAIL_VERIFICATION_STATUS } from 'src/types/global';
+import { USER_STATUS } from 'src/types/global';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
@@ -16,5 +16,5 @@ export class User {
   email: string;
 
   @Column()
-  verificationCode: EMAIL_VERIFICATION_STATUS;
+  status: USER_STATUS;
 }

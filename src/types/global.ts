@@ -4,9 +4,10 @@ export enum SEND_EMAIL_TYPE {
   RECOVER_PASSWORD,
 }
 
-export enum EMAIL_VERIFICATION_STATUS {
-  ACTIVE = 1,
-  INACTIVE = 2,
+export enum USER_STATUS {
+  EMAIL_INACTIVE = 1,
+  ACTIVE = 2,
+  INACTIVE = 3,
 }
 
 export type SendEmailPayloadType = {
