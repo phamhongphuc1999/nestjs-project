@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import {
+  AccessTokenResponseDto,
   AuthSignupDto,
   GoogleRecoverPasswordDto,
   GoogleSigninDto,
@@ -7,10 +8,11 @@ import {
   RecoverTokenDto,
   VerifyTokenDto,
 } from 'src/dto/auth.dto';
+import { OnlyOkResponseDto } from 'src/dto/common.dto';
 import { User } from 'src/entities';
 import { UserRepository } from 'src/repository/user.repository';
 import { SEND_EMAIL_TYPE, USER_STATUS } from 'src/types/global';
-import { generatePasswordHash } from 'src/utils/common.utils';
+import { generatePasswordHash, verifyPasswordHash } from 'src/utils/common.utils';
 import { generateEmailVerifyToken, generateSignature, verifyEmailToken } from 'src/utils/jwt';
 import { MailService } from '../mail.service/mail.service';
 import { GoogleOAuthService } from './google-oauth.service';
@@ -23,7 +25,7 @@ export class AuthService {
     private readonly mailService: MailService,
   ) {}
 
-  async signup(payload: AuthSignupDto) {
+  async signup(payload: AuthSignupDto): Promise<OnlyOkResponseDto> {
     const _tempUser = await this.userRepository.findOne({
       where: [{ name: payload.name }, { email: payload.email }],
     });
@@ -49,7 +51,7 @@ export class AuthService {
     return { isOk: true };
   }
 
-  async googleLogin(payload: GoogleSigninDto) {
+  async googleLogin(payload: GoogleSigninDto): Promise<AccessTokenResponseDto> {
     const verify = await this.googleOAuthService.verifyToken(payload.idToken);
     if (!verify) throw new UnauthorizedException('Invalid token');
     if (!verify.email) throw new BadRequestException('Email not found');
@@ -58,7 +60,7 @@ export class AuthService {
       return { accessToken: generateSignature({ sub: findUser.id }) };
     } else {
       const newUser: User = this.userRepository.create({
-        name: verify.email,
+        name: verify.name || verify.email,
         email: verify.email,
         password: '',
         status: USER_STATUS.EMAIL_INACTIVE,
@@ -69,7 +71,7 @@ export class AuthService {
         verifyEmailUserId: savedUser.id,
       });
       await this.mailService.sendEmail(SEND_EMAIL_TYPE.VERIFY, {
-        name: verify.email,
+        name: verify.name || verify.email,
         to: verify.email,
         token: verificationToken,
       });
@@ -77,7 +79,7 @@ export class AuthService {
     }
   }
 
-  async verifyEmail(payload: VerifyTokenDto) {
+  async verifyEmail(payload: VerifyTokenDto): Promise<OnlyOkResponseDto> {
     const decodedToken = verifyEmailToken<{ verifyEmailUserId?: string }>(payload.token);
     const userId = decodedToken?.verifyEmailUserId;
     if (!userId || !decodedToken?.exp) throw new UnauthorizedException('Cannot decode token');
@@ -90,18 +92,16 @@ export class AuthService {
     return { isOk: true };
   }
 
-  async signinWithPassword(payload: PasswordLoginDto) {
-    const hashPassword = await generatePasswordHash(payload.password);
-    const findUser = await this.userRepository.findOneBy({
-      password: hashPassword,
-      email: payload.email,
-    });
-    if (!findUser) throw new BadRequestException('Login failure!');
+  async signinWithPassword(payload: PasswordLoginDto): Promise<AccessTokenResponseDto> {
+    const findUser = await this.userRepository.findOneBy({ email: payload.email });
+    if (!findUser) throw new BadRequestException('Email or password is incorrect!');
+    const isPasswordOk = await verifyPasswordHash(findUser.password, payload.password);
+    if (!isPasswordOk) throw new BadRequestException('Email or password is incorrect!');
     const token = generateSignature({ sub: findUser.id });
     return { accessToken: token };
   }
 
-  async sendRecoverMailPassword(payload: GoogleRecoverPasswordDto) {
+  async sendRecoverMailPassword(payload: GoogleRecoverPasswordDto): Promise<OnlyOkResponseDto> {
     const verify = await this.googleOAuthService.verifyToken(payload.idToken);
     if (!verify) throw new UnauthorizedException('Invalid token');
     if (!verify.email) throw new BadRequestException('Email not found');
@@ -118,7 +118,7 @@ export class AuthService {
     return { isOk: true };
   }
 
-  async recoverPassword(payload: RecoverTokenDto) {
+  async recoverPassword(payload: RecoverTokenDto): Promise<OnlyOkResponseDto> {
     const decodedToken = verifyEmailToken<{ recoverEmailUserId?: string }>(payload.token);
     const userId = decodedToken?.recoverEmailUserId;
     if (!userId || !decodedToken?.exp) throw new UnauthorizedException('Cannot decode token');

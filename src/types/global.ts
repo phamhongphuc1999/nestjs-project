@@ -10,6 +10,11 @@ export enum USER_STATUS {
   INACTIVE = 3,
 }
 
+export enum USER_ROLE {
+  USER = 1,
+  ADMIN = 2,
+}
+
 export type SendEmailPayloadType = {
   to: string;
   name: string;

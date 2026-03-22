@@ -13,15 +13,10 @@ export class GoogleOAuthService {
 
   async verifyToken(idToken: string) {
     try {
-      const ticket = await this.client.verifyIdToken({
-        idToken,
-        audience: this.clientId,
-      });
+      const ticket = await this.client.verifyIdToken({ idToken, audience: this.clientId });
 
       const data = ticket.getPayload();
-      if (!data) {
-        throw new UnauthorizedException('Invalid token');
-      }
+      if (!data) throw new UnauthorizedException('Invalid token');
 
       const res = { id: data?.sub, email: data?.email, name: data?.name, avatarUrl: data?.picture };
 

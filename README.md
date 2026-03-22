@@ -23,7 +23,7 @@ http://localhost:8025/
 ### Swagger
 
 ```bash
-http://localhost:3000/api
+http://localhost:{port}/api
 ```
 
 ### Reference

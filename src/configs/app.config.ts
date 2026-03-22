@@ -8,7 +8,7 @@ const AppConfigs = {
     PASSWORD: process.env.POSTGRES_PASSWORD,
     DATABASE: process.env.POSTGRES_DB,
   },
-  PORT: 3000,
+  PORT: 3002,
   MAIL: {
     HOST: process.env.MAIL_HOST || 'smtp.gmail.com',
     PORT: parseInt(process.env.MAIL_PORT || '587'),

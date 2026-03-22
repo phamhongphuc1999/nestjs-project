@@ -5,3 +5,7 @@ export async function generatePasswordHash(password: string) {
     type: argon2.argon2id,
   });
 }
+
+export async function verifyPasswordHash(passwordHash: string, password: string) {
+  return await argon2.verify(passwordHash, password);
+}
