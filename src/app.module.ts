@@ -5,6 +5,7 @@ import { AppController } from './controllers/app.controller';
 import { AuthModule } from './controllers/auth.controller';
 import { UserModule } from './controllers/user.controller';
 import { PostgresDatabase } from './databases';
+import { EventsModule } from './events/events.module';
 import { LoggerMiddleware } from './middleware/logger.middleware';
 import { WinstonService } from './services/logging';
 
@@ -13,6 +14,7 @@ import { WinstonService } from './services/logging';
     WinstonService,
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot(),
+    EventsModule,
     PostgresDatabase,
     UserModule,
     AuthModule,

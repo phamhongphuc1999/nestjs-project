@@ -11,11 +11,10 @@ const postgresConfig: TypeOrmModuleOptions & DataSourceOptions = {
   username: AppConfigs.DATABASE.USERNAME,
   password: AppConfigs.DATABASE.PASSWORD,
   database: AppConfigs.DATABASE.DATABASE,
-  synchronize: true,
+  synchronize: false,
 
   entities: Object.values(entities),
-  // migrations: [path.join(__dirname, '/../migrations/*.{ts}')],
-  migrations: [path.join(__dirname, '/../migrations/*.{sql}')],
+  migrations: [path.join(__dirname, '/../migrations/*.{ts}')],
 };
 
 const PostgresDataSource = new DataSource(postgresConfig);

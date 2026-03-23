@@ -6,6 +6,7 @@ import { AppConfigs } from './configs/app.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.enableCors();
 
   const config = new DocumentBuilder()
     .setTitle('My API')

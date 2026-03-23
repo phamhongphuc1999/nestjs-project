@@ -1,3 +1,4 @@
+import { IsEmail } from 'class-validator';
 import { Request } from 'express';
 import { USER_ROLE, USER_STATUS } from 'src/types/global';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
@@ -8,13 +9,14 @@ export class User extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: String })
   name: string;
 
-  @Column()
+  @Column({ type: String })
   password: string;
 
-  @Column()
+  @Column({ type: String })
+  @IsEmail()
   email: string;
 
   @Column({ type: 'int', default: USER_STATUS.EMAIL_INACTIVE })
@@ -22,6 +24,9 @@ export class User extends BaseEntity {
 
   @Column({ type: 'int', default: USER_ROLE.USER })
   role: USER_ROLE;
+
+  @Column({ type: String })
+  refreshToken: string;
 }
 
 export interface AuthRequest extends Request {

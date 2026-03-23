@@ -15,6 +15,12 @@ export enum USER_ROLE {
   ADMIN = 2,
 }
 
+export enum TOKEN_TYPE {
+  ACCESS_TOKEN = 1,
+  EMAIL_VERIFY_TOKEN = 2,
+  REFRESH_TOKEN = 3,
+}
+
 export type SendEmailPayloadType = {
   to: string;
   name: string;

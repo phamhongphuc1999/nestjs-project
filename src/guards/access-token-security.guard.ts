@@ -2,7 +2,8 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { Reflector } from '@nestjs/core';
 import { AuthRequest } from 'src/entities';
 import { UserRepository } from 'src/repository/user.repository';
-import { verifySignature } from 'src/utils/jwt';
+import { TOKEN_TYPE } from 'src/types/global';
+import { verifyToken } from 'src/utils/jwt';
 import { IsNull } from 'typeorm';
 
 @Injectable()
@@ -20,7 +21,7 @@ export class TokenSecurityGuard implements CanActivate {
 
     if (!token?.length) throw new UnauthorizedException('Token is incorrect');
 
-    const decodedToken = verifySignature(token);
+    const decodedToken = verifyToken(TOKEN_TYPE.ACCESS_TOKEN, token);
     const id = decodedToken?.sub;
     if (!id || !decodedToken?.exp) throw new UnauthorizedException('Cannot decode token');
 
