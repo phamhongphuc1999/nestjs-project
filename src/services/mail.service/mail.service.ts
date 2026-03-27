@@ -9,7 +9,7 @@ const configs: {
   [SEND_EMAIL_TYPE.VERIFY]: {
     subject: 'Verification Email',
     template: 'signup',
-    toAppUrl: '/login',
+    toAppUrl: '/verify-email',
   },
   [SEND_EMAIL_TYPE.LOGIN]: { subject: 'Login Email', template: 'login', toAppUrl: '/' },
   [SEND_EMAIL_TYPE.RECOVER_PASSWORD]: {

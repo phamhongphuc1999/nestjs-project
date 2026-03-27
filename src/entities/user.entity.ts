@@ -19,13 +19,13 @@ export class User extends BaseEntity {
   @IsEmail()
   email: string;
 
-  @Column({ type: 'int', default: USER_STATUS.EMAIL_INACTIVE })
+  @Column({ type: Number, default: USER_STATUS.EMAIL_INACTIVE })
   status: USER_STATUS;
 
-  @Column({ type: 'int', default: USER_ROLE.USER })
+  @Column({ type: Number, default: USER_ROLE.USER })
   role: USER_ROLE;
 
-  @Column({ type: String })
+  @Column({ type: String, nullable: true })
   refreshToken: string;
 }
 

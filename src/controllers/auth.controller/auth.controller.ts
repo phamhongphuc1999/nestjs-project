@@ -1,7 +1,8 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, Post, Req, Res, UnauthorizedException } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { Response } from 'express';
+import { Request, Response } from 'express';
+import { AppConfigs } from 'src/configs/app.config';
 import {
   AccessTokenResponseDto,
   AuthSignupDto,
@@ -13,6 +14,7 @@ import {
 } from 'src/dto/auth.dto';
 import { OnlyOkResponseDto } from 'src/dto/common.dto';
 import { AuthService } from 'src/services/auth.service/auth.service';
+import { NodeEnvType } from 'src/types/global';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -42,7 +44,7 @@ export class AuthController {
     const { accessToken, refreshToken } = await this.authService.googleLogin(body);
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: true,
+      secure: AppConfigs.NODE_ENV == NodeEnvType.PRODUCTION,
       sameSite: 'strict',
       path: '/auth/refresh',
     });
@@ -59,11 +61,29 @@ export class AuthController {
     const { accessToken, refreshToken } = await this.authService.signinWithPassword(body);
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: true,
+      secure: AppConfigs.NODE_ENV == NodeEnvType.PRODUCTION,
       sameSite: 'strict',
       path: '/auth/refresh',
     });
     return { accessToken };
+  }
+
+  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiResponse({ type: AccessTokenResponseDto })
+  @Post('/refresh')
+  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const refreshToken = (req.cookies as { refreshToken?: string })?.refreshToken;
+    if (!refreshToken) throw new UnauthorizedException('Missing refresh token');
+    const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+      await this.authService.refreshToken(refreshToken);
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      secure: AppConfigs.NODE_ENV == NodeEnvType.PRODUCTION,
+      sameSite: 'lax',
+      path: '/auth/refresh',
+    });
+
+    return { accessToken: newAccessToken };
   }
 
   @ApiOperation({ summary: 'Send a recovery mail' })

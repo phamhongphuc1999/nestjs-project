@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { USER_ROLE } from 'src/types/global';
+import { USER_ROLE, USER_STATUS } from 'src/types/global';
 
-export class GetUSerResponseDto {
+export class GetUserResponseDto {
   @ApiProperty({ type: Number, description: 'id' })
   id: number;
 
@@ -13,4 +13,7 @@ export class GetUSerResponseDto {
 
   @ApiProperty({ type: Number, description: 'role' })
   role: USER_ROLE;
+
+  @ApiProperty({ type: Number, description: 'status' })
+  status: USER_STATUS;
 }

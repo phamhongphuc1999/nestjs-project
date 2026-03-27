@@ -1,3 +1,4 @@
+import { MESSAGE_TYPE } from 'src/types/global';
 import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { Conversation } from './conversation.entity';
@@ -18,6 +19,9 @@ export class Message extends BaseEntity {
   @JoinColumn({ name: 'senderId' })
   sender: User;
 
-  @Column()
+  @Column({ type: String })
   content: string;
+
+  @Column({ type: Number, default: MESSAGE_TYPE.TEXT })
+  type: MESSAGE_TYPE;
 }

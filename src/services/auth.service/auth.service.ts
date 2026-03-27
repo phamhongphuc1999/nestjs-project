@@ -96,6 +96,22 @@ export class AuthService {
     }
   }
 
+  async refreshToken(
+    refreshToken: string,
+  ): Promise<AccessTokenResponseDto & { refreshToken: string }> {
+    const payload = verifyToken<{ sub: number }>(TOKEN_TYPE.REFRESH_TOKEN, refreshToken);
+
+    const findUser = await this.userRepository.findOneBy({ id: payload.sub });
+    if (!findUser?.refreshToken) throw new BadRequestException();
+    const isRefreshTokenOk = await verifyPasswordHash(findUser.refreshToken, refreshToken);
+    if (!isRefreshTokenOk) throw new UnauthorizedException();
+
+    const newAccessToken = generateToken(TOKEN_TYPE.ACCESS_TOKEN, payload);
+    const newRefreshToken = generateToken(TOKEN_TYPE.REFRESH_TOKEN, payload);
+
+    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+  }
+
   async verifyEmail(payload: VerifyTokenDto): Promise<OnlyOkResponseDto> {
     const decodedToken = verifyToken<{ verifyEmailUserId?: string }>(
       TOKEN_TYPE.EMAIL_VERIFY_TOKEN,

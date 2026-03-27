@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './controllers/app.controller';
 import { AuthModule } from './controllers/auth.controller';
+import { ConversationModule } from './controllers/conversation.controller';
 import { UserModule } from './controllers/user.controller';
 import { PostgresDatabase } from './databases';
 import { EventsModule } from './events/events.module';
@@ -18,6 +19,7 @@ import { WinstonService } from './services/logging';
     PostgresDatabase,
     UserModule,
     AuthModule,
+    ConversationModule,
   ],
   controllers: [AppController],
   providers: [],

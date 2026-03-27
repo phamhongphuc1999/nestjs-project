@@ -15,6 +15,23 @@ export enum USER_ROLE {
   ADMIN = 2,
 }
 
+export enum CONVERSATION_TYPE {
+  GROUP = 1,
+  PRIVATE = 2,
+}
+
+export enum CONVERSATION_USER_ROLE {
+  USER = 1,
+  ADMIN = 2,
+}
+
+export enum MESSAGE_TYPE {
+  TEXT = 1,
+  IMAGE = 2,
+  VIDEO = 3,
+  SYSTEM = 4,
+}
+
 export enum TOKEN_TYPE {
   ACCESS_TOKEN = 1,
   EMAIL_VERIFY_TOKEN = 2,
@@ -26,3 +43,8 @@ export type SendEmailPayloadType = {
   name: string;
   token: string;
 };
+
+export enum NodeEnvType {
+  DEVELOPMENT = 'development',
+  PRODUCTION = 'production',
+}

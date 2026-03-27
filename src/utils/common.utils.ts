@@ -9,3 +9,18 @@ export async function generatePasswordHash(password: string) {
 export async function verifyPasswordHash(passwordHash: string, password: string) {
   return await argon2.verify(passwordHash, password);
 }
+
+export function getPaginationData(
+  limit: number,
+  itemsLen: number,
+  total: number,
+  currentPage: number,
+) {
+  return {
+    totalItems: total,
+    itemCount: itemsLen,
+    itemsPerPage: limit,
+    totalPages: Math.ceil(total / limit),
+    currentPage,
+  };
+}

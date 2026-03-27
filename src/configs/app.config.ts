@@ -1,6 +1,8 @@
 import 'dotenv/config';
+import { NodeEnvType } from 'src/types/global';
 
 const AppConfigs = {
+  NODE_ENV: (process.env.NODE_ENV || NodeEnvType.DEVELOPMENT) as NodeEnvType,
   DATABASE: {
     HOST: 'localhost',
     PORT: parseInt(process.env.POSTGRES_PORT || '5432'),
