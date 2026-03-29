@@ -9,13 +9,13 @@ const configs: {
   [SEND_EMAIL_TYPE.VERIFY]: {
     subject: 'Verification Email',
     template: 'signup',
-    toAppUrl: '/verify-email',
+    toAppUrl: '/papp/verify-email',
   },
-  [SEND_EMAIL_TYPE.LOGIN]: { subject: 'Login Email', template: 'login', toAppUrl: '/' },
+  [SEND_EMAIL_TYPE.LOGIN]: { subject: 'Login Email', template: 'login', toAppUrl: '/papp' },
   [SEND_EMAIL_TYPE.RECOVER_PASSWORD]: {
     subject: 'Recovery Ownership',
     template: 'recover',
-    toAppUrl: '/recover',
+    toAppUrl: '/papp/recover',
   },
 };
 
@@ -29,10 +29,11 @@ export class MailService {
     ...params: Array<{ key: string; value: string }>
   ) {
     const config = configs[type];
+    if (content.token) params.push({ key: 'token', value: content.token });
     const _params = params.map((item) => `${item.key}=${encodeURIComponent(item.value)}`).join('&');
     const toAppUrl = _params
-      ? `${AppConfigs.FRONTEND_URL}${config.toAppUrl}?token=${content.token}&${_params}`
-      : `${AppConfigs.FRONTEND_URL}${config.toAppUrl}?token=${content.token}`;
+      ? `${AppConfigs.FRONTEND_URL}${config.toAppUrl}?${_params}`
+      : `${AppConfigs.FRONTEND_URL}${config.toAppUrl}`;
 
     await this.mailerService.sendMail({
       to: content.to,

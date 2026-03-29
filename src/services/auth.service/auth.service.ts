@@ -72,6 +72,10 @@ export class AuthService {
     if (findUser) {
       const _data = { sub: findUser.id };
       const refreshToken = await this.createRefreshToken(findUser.id, _data);
+      await this.mailService.sendEmail(SEND_EMAIL_TYPE.LOGIN, {
+        name: findUser.name || findUser.email,
+        to: findUser.email,
+      });
       return { accessToken: generateToken(TOKEN_TYPE.ACCESS_TOKEN, _data), refreshToken };
     } else {
       const newUser: User = this.userRepository.create({
@@ -138,6 +142,10 @@ export class AuthService {
     const _data = { sub: findUser.id };
     const token = generateToken(TOKEN_TYPE.ACCESS_TOKEN, _data);
     const refreshToken = await this.createRefreshToken(findUser.id, _data);
+    await this.mailService.sendEmail(SEND_EMAIL_TYPE.LOGIN, {
+      name: findUser.name || findUser.email,
+      to: findUser.email,
+    });
     return { accessToken: token, refreshToken };
   }
 

@@ -1,12 +1,8 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from 'src/Decorations/user.decoration';
 import { PaginationQueryDto } from 'src/dto/common.dto';
-import {
-  CreatePrivateChatDto,
-  GetListConversationResponseDto,
-  GetPrivateConversationResponseDto,
-} from 'src/dto/conversation.dto';
+import { CreatePrivateChatDto, GetListConversationResponseDto } from 'src/dto/conversation.dto';
 import { Conversation, User } from 'src/entities';
 import { TokenSecurityGuard } from 'src/guards/access-token-security.guard';
 import { ConversationService } from 'src/services/conversation.service/conversation.service';
@@ -34,25 +30,13 @@ export class ConversationController {
     description: 'Return list user conversations',
     type: GetListConversationResponseDto,
   })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
   @Get('/conversations')
   getListConversations(
     @CurrentUser() user: User,
-    @Param() params: PaginationQueryDto,
+    @Query() params: PaginationQueryDto,
   ): Promise<GetListConversationResponseDto> {
     return this.conversationService.getListConversations(user, params);
-  }
-
-  @ApiOperation({ summary: 'Get private conversation' })
-  @ApiResponse({
-    status: 200,
-    description: 'Get private conversation',
-    type: GetListConversationResponseDto,
-  })
-  @Get('/private-conversation')
-  getPrivateConversation(
-    @CurrentUser() user: User,
-    @Param() conversationId: number,
-  ): Promise<GetPrivateConversationResponseDto> {
-    return this.conversationService.getPrivateConversation(user, conversationId);
   }
 }

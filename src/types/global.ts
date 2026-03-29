@@ -41,7 +41,7 @@ export enum TOKEN_TYPE {
 export type SendEmailPayloadType = {
   to: string;
   name: string;
-  token: string;
+  token?: string;
 };
 
 export enum NodeEnvType {

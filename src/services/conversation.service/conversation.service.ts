@@ -1,9 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PaginationQueryDto } from 'src/dto/common.dto';
 import {
+  ConversationListItemDto,
   CreatePrivateChatDto,
   GetListConversationResponseDto,
-  GetPrivateConversationResponseDto,
 } from 'src/dto/conversation.dto';
 import { Conversation, User } from 'src/entities';
 import { ConversationParticipantRepository } from 'src/repository/conversation-participants.repository';
@@ -11,6 +11,7 @@ import { ConversationRepository } from 'src/repository/conversation.repository';
 import { UserRepository } from 'src/repository/user.repository';
 import { CONVERSATION_TYPE, CONVERSATION_USER_ROLE } from 'src/types/global';
 import { getPaginationData } from 'src/utils/common.utils';
+import { In, Not } from 'typeorm';
 
 @Injectable()
 export class ConversationService {
@@ -22,6 +23,7 @@ export class ConversationService {
 
   async createPrivateChat(user: User, payload: CreatePrivateChatDto): Promise<Conversation> {
     const { partnerId } = payload;
+    if (partnerId == user.id) throw new BadRequestException('Two users is a same person');
     const user2 = await this.userRepository.findOneBy({ id: partnerId });
     if (!user2) throw new BadRequestException(`${partnerId} not found`);
     const hash =
@@ -63,30 +65,64 @@ export class ConversationService {
     const [participants, total] = await this.conversationParticipantsRepository.findAndCount({
       take: limit,
       skip: skip,
-      order: { createdAt: 'DESC' },
+      order: { createdAt: 'DESC', id: 'DESC' },
+      relations: { conversation: true },
       where: { user: { id: user.id } },
     });
-    return {
-      data: participants,
-      metadata: getPaginationData(limit, participants.length, total, page),
-    };
-  }
+    const privateConversationIds = participants
+      .filter((participant) => participant.conversation?.type === CONVERSATION_TYPE.PRIVATE)
+      .map((participant) => participant.conversation.id);
 
-  async getPrivateConversation(
-    user: User,
-    conversationId: number,
-  ): Promise<GetPrivateConversationResponseDto> {
-    const participants = await this.conversationParticipantsRepository.findBy({
-      conversation: { id: conversationId },
+    if (privateConversationIds.length > 0) {
+      const otherParticipants = await this.conversationParticipantsRepository.find({
+        where: { conversation: { id: In(privateConversationIds) }, user: { id: Not(user.id) } },
+        relations: { user: true },
+      });
+      const otherParticipantsMap = new Map(
+        otherParticipants.map((participant) => [participant.conversationId, participant]),
+      );
+      const data: Array<ConversationListItemDto> = participants.map((participant) => {
+        const coreData: ConversationListItemDto = {
+          conversationId: participant.conversationId,
+          conversationName: participant.conversation.name,
+          createdAt: participant.createdAt,
+          deletedAt: participant.deletedAt,
+          id: participant.id,
+          role: participant.role,
+          updatedAt: participant.updatedAt,
+          groupType: participant.conversation.type,
+          yourParticipant: { id: participant.userId, name: user.name, email: user.email },
+        };
+        if (participant.conversation.type == CONVERSATION_TYPE.PRIVATE) {
+          const anotherParticipant = otherParticipantsMap.get(participant.conversation.id);
+          return anotherParticipant
+            ? {
+                ...coreData,
+                anotherParticipant: {
+                  id: anotherParticipant.user.id,
+                  name: anotherParticipant.user.name,
+                  email: anotherParticipant.user.email,
+                },
+              }
+            : coreData;
+        }
+        return coreData;
+      });
+      return { data, metadata: getPaginationData(limit, data.length, total, page) };
+    }
+    const data: Array<ConversationListItemDto> = participants.map((participant) => {
+      return {
+        conversationId: participant.conversationId,
+        conversationName: participant.conversation.name,
+        createdAt: participant.createdAt,
+        deletedAt: participant.deletedAt,
+        id: participant.id,
+        role: participant.role,
+        updatedAt: participant.updatedAt,
+        groupType: participant.conversation.type,
+        yourParticipant: { id: participant.userId, name: user.name, email: user.email },
+      };
     });
-    if (participants.length != 2) throw new BadRequestException('Conversation is error');
-    if (participants[0].user.id != user.id && participants[1].user.id != user.id)
-      throw new BadRequestException();
-    const conversation = await this.conversationRepository.findOneBy({
-      id: conversationId,
-      type: CONVERSATION_TYPE.PRIVATE,
-    });
-    if (!conversation) throw new BadRequestException('Conversation not found');
-    return { conversation };
+    return { data, metadata: getPaginationData(limit, data.length, total, page) };
   }
 }
