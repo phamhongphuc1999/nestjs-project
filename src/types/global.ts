@@ -1,3 +1,5 @@
+import { DefaultEventsMap, Socket } from 'socket.io';
+
 export enum SEND_EMAIL_TYPE {
   VERIFY,
   LOGIN,
@@ -48,3 +50,18 @@ export enum NodeEnvType {
   DEVELOPMENT = 'development',
   PRODUCTION = 'production',
 }
+
+export type JoinConversationPayload = {
+  conversationId: number;
+};
+
+export type SendMessagePayload = {
+  conversationId: number;
+  message: string;
+};
+
+export type SocketData = {
+  userId?: number;
+};
+
+export type AppSocket = Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, SocketData>;
