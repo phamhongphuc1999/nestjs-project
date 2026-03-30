@@ -10,10 +10,8 @@ export class AppSocketUtil {
   private static extractToken(client: AppSocket): string | null {
     const auth = (client.handshake?.auth ?? {}) as Record<string, unknown>;
     const authToken = auth['token'];
-    console.log('🚀 ~ AppSocketUtil ~ extractToken ~ authToken:', authToken);
     if (typeof authToken === 'string' && authToken.length > 0) return authToken;
     const rawHeader = client.handshake?.headers?.authorization as unknown;
-    console.log('🚀 ~ AppSocketUtil ~ extractToken ~ rawHeader:', rawHeader);
     let value: string | null = null;
     if (typeof rawHeader === 'string') value = rawHeader;
     else if (Array.isArray(rawHeader) && typeof rawHeader[0] === 'string') value = rawHeader[0];
@@ -27,12 +25,9 @@ export class AppSocketUtil {
     const existing = client.data?.userId;
     if (typeof existing === 'number' && existing > 0) return existing;
     const token = this.extractToken(client);
-    console.log('🚀 ~ AppSocketUtil ~ getUserId ~ token:', token);
     if (!token) throw new UnauthorizedException('Token is incorrect');
     const decodedToken = verifyToken(TOKEN_TYPE.ACCESS_TOKEN, token);
-    console.log('🚀 ~ AppSocketUtil ~ getUserId ~ decodedToken:', decodedToken);
     const id = Number(decodedToken?.sub);
-    console.log('🚀 ~ AppSocketUtil ~ getUserId ~ id:', id);
     if (!id) throw new UnauthorizedException('Cannot decode token');
     client.data.userId = id;
     return id;

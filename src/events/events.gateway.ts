@@ -93,23 +93,21 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
     @MessageBody() data: JoinConversationPayload,
     @ConnectedSocket() client: AppSocket,
   ) {
-    try {
-      const conversationId = Number(data?.conversationId);
-      console.log('🚀 ~ EventsGateway ~ handleJoin ~ conversationId:', conversationId);
-      if (!conversationId) throw new ForbiddenException('Conversation not found');
-      const userId = AppSocketUtil.getUserId(client);
-      console.log('🚀 ~ EventsGateway ~ handleJoin ~ userId:', userId);
+    const conversationId = Number(data?.conversationId);
+    this.logger.log(
+      `join_conversation received: socket=${client.id} conversationId=${conversationId}`,
+    );
+    if (!conversationId) throw new ForbiddenException('Conversation not found');
+    const userId = AppSocketUtil.getUserId(client);
+    this.logger.log(`join_conversation userId=${userId} conversationId=${conversationId}`);
 
-      const isParticipant = await this.isParticipant(conversationId, userId);
-      console.log('🚀 ~ EventsGateway ~ handleJoin ~ isParticipant:', isParticipant);
-      if (!isParticipant) throw new ForbiddenException('User is not a participant');
+    const isParticipant = await this.isParticipant(conversationId, userId);
+    this.logger.log(`join_conversation isParticipant=${isParticipant}`);
+    if (!isParticipant) throw new ForbiddenException('User is not a participant');
 
-      await client.join(AppSocketUtil.conversationRoom(conversationId));
-      console.log('123456986789547689457896749587689475689475896');
-      return { event: 'joined', data: { conversationId } };
-    } catch (error) {
-      console.error('handleJoin error: ', error);
-    }
+    await client.join(AppSocketUtil.conversationRoom(conversationId));
+    this.logger.log(`join_conversation success: userId=${userId} conversationId=${conversationId}`);
+    client.emit('joined', { conversationId });
   }
 
   @SubscribeMessage(MICROSERVICE_EVENTS.send_message)
@@ -117,7 +115,7 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
     @MessageBody() data: SendMessagePayload,
     @ConnectedSocket() client: AppSocket,
   ) {
-    console.log('🚀 ~ EventsGateway ~ handleMessage ~ data:', data);
+    this.logger.log(`send_message received: socket=${client.id} data=${JSON.stringify(data)}`);
     const conversationId = Number(data?.conversationId);
     if (!conversationId) throw new ForbiddenException('Conversation not found');
     const userId = AppSocketUtil.getUserId(client);
@@ -130,6 +128,7 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
     this.server
       .to(AppSocketUtil.conversationRoom(conversationId))
       .emit(MICROSERVICE_EVENTS.receive_message, payload);
-    return { event: 'message_sent', data: payload };
+    this.logger.log(`send_message success: userId=${userId} conversationId=${conversationId}`);
+    client.emit('message_sent', payload);
   }
 }

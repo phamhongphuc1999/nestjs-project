@@ -62,28 +62,44 @@ function bootstrap() {
     console.log(`Connected: ${socket.id}`);
 
     // 1. Join the conversation
-    socket.emit(MICROSERVICE_EVENTS.join_conversation, { conversationId }, (ack: any) => {
-      console.log('Join ack received:', ack);
+    socket.emit(MICROSERVICE_EVENTS.join_conversation, { conversationId });
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      if (ack && ack?.event === 'joined') {
-        console.log('Successfully joined room. Sending message...');
+    const joinTimeout = setTimeout(() => {
+      console.error('Join event timeout: no "joined" event received');
+    }, 5000);
 
-        socket.emit(
-          MICROSERVICE_EVENTS.send_message,
-          { conversationId, message },
-          (sendAck: any) => {
-            console.log('Send ack received:', sendAck);
-          },
-        );
-      } else {
-        console.error('Failed to join conversation. Ack:', ack);
-      }
+    socket.once('joined', (payload) => {
+      clearTimeout(joinTimeout);
+      console.log('Joined event received:', payload);
+      console.log('Successfully joined room. Sending message...');
+      socket.emit(MICROSERVICE_EVENTS.send_message, { conversationId, message });
+
+      const sendTimeout = setTimeout(() => {
+        console.error('Send event timeout: no "message_sent" event received');
+      }, 5000);
+
+      socket.once('message_sent', (sendPayload) => {
+        clearTimeout(sendTimeout);
+        console.log('Message sent event received:', sendPayload);
+      });
     });
   });
 
   socket.on(MICROSERVICE_EVENTS.receive_message, (payload) => {
     console.log('Received message:', payload);
+  });
+
+  socket.onAny((event, ...args) => {
+    if (event === MICROSERVICE_EVENTS.receive_message) return;
+    console.log('Event:', event, ...args);
+  });
+
+  socket.on('exception', (payload) => {
+    console.error('Exception event:', payload);
+  });
+
+  socket.on('error', (err) => {
+    console.error('Error event:', err);
   });
 
   socket.on('connect_error', (err) => {
