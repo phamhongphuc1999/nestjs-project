@@ -14,10 +14,16 @@ export class Message extends BaseEntity {
   @JoinColumn({ name: 'conversationId' })
   conversation: Conversation;
 
+  @Column()
+  conversationId: number;
+
   @Index()
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'senderId' })
   sender: User;
+
+  @Column()
+  senderId: number;
 
   @Column({ type: String })
   content: string;

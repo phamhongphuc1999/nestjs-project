@@ -32,7 +32,7 @@ export class ConversationService {
     if (findConversation) throw new BadRequestException('Conversation is already exist');
     const newConversation = this.conversationRepository.create({
       type: CONVERSATION_TYPE.PRIVATE,
-      name: '',
+      name: hash,
       hash,
     });
     const savedConversation = await this.conversationRepository.save(newConversation);
@@ -57,9 +57,9 @@ export class ConversationService {
 
   async getListConversations(
     user: User,
-    params: PaginationQueryDto,
+    query: PaginationQueryDto,
   ): Promise<GetListConversationResponseDto> {
-    const { page = 1, limit = 10 } = params;
+    const { page = 1, limit = 10 } = query;
     const skip = (page - 1) * limit;
 
     const [participants, total] = await this.conversationParticipantsRepository.findAndCount({

@@ -1,8 +1,8 @@
-import { BadRequestException, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from 'src/Decorations/user.decoration';
 import { OnlyOkResponseDto } from 'src/dto/common.dto';
-import { GetUserResponseDto } from 'src/dto/user.dto';
+import { FindUserQueryDto, GetUserResponseDto } from 'src/dto/user.dto';
 import { User } from 'src/entities';
 import { TokenSecurityGuard } from 'src/guards/access-token-security.guard';
 import { UserService } from 'src/services/user.service/user.service';
@@ -37,5 +37,9 @@ export class UserController {
     } else if (user.status == USER_STATUS.INACTIVE)
       throw new BadRequestException('Account is inactive');
     else throw new BadRequestException('Account has been already active');
+  }
+
+  findUsers(@Query() query: FindUserQueryDto) {
+    return this.userService.findUsers(query);
   }
 }

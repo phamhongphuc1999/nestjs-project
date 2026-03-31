@@ -35,8 +35,8 @@ export class ConversationController {
   @Get('/conversations')
   getListConversations(
     @CurrentUser() user: User,
-    @Query() params: PaginationQueryDto,
+    @Query() query: PaginationQueryDto,
   ): Promise<GetListConversationResponseDto> {
-    return this.conversationService.getListConversations(user, params);
+    return this.conversationService.getListConversations(user, query);
   }
 }

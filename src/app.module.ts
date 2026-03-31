@@ -4,6 +4,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './controllers/app.controller';
 import { AuthModule } from './controllers/auth.controller';
 import { ConversationModule } from './controllers/conversation.controller';
+import { MessageModule } from './controllers/message.controller';
 import { UserModule } from './controllers/user.controller';
 import { PostgresDatabase } from './databases';
 import { EventsModule } from './events/events.module';
@@ -17,15 +18,16 @@ import { WinstonService } from './services/logging';
     ThrottlerModule.forRoot(),
     EventsModule,
     PostgresDatabase,
-    UserModule,
     AuthModule,
+    UserModule,
     ConversationModule,
+    MessageModule,
   ],
   controllers: [AppController],
   providers: [],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(LoggerMiddleware).forRoutes('*'); // all routes
+    consumer.apply(LoggerMiddleware).forRoutes('*');
   }
 }

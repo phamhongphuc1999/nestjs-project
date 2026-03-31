@@ -84,7 +84,6 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
       await this.redisClient.sAdd(cacheKey, String(userId));
       await this.redisClient.expire(cacheKey, 300);
     }
-
     return !!participant;
   }
 
@@ -107,7 +106,7 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
 
     await client.join(AppSocketUtil.conversationRoom(conversationId));
     this.logger.log(`join_conversation success: userId=${userId} conversationId=${conversationId}`);
-    client.emit('joined', { conversationId });
+    client.emit(MICROSERVICE_EVENTS.joined, { conversationId });
   }
 
   @SubscribeMessage(MICROSERVICE_EVENTS.send_message)
@@ -129,6 +128,6 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
       .to(AppSocketUtil.conversationRoom(conversationId))
       .emit(MICROSERVICE_EVENTS.receive_message, payload);
     this.logger.log(`send_message success: userId=${userId} conversationId=${conversationId}`);
-    client.emit('message_sent', payload);
+    client.emit(MICROSERVICE_EVENTS.message_sent, payload);
   }
 }
