@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import {
   GetMessageQueryDto,
   GetMessageResponseDto,
@@ -13,17 +13,17 @@ import { getPaginationData } from 'src/utils/common.utils';
 export class MessageService {
   constructor(
     private readonly messageRepository: MessageRepository,
-    private conversationParticipantsRepository: ConversationParticipantRepository,
+    private readonly participantsRepository: ConversationParticipantRepository,
   ) {}
 
   async getMessages(user: User, query: GetMessageQueryDto): Promise<GetMessageResponseDto> {
     const { conversationId, page = 1, limit = 10 } = query;
     const skip = (page - 1) * limit;
-    const participant = await this.conversationParticipantsRepository.findOneBy({
+    const participant = await this.participantsRepository.findOneBy({
       userId: user.id,
       conversationId,
     });
-    if (!participant) throw new UnauthorizedException('User is unauthorized');
+    if (!participant) throw new ForbiddenException('User is forbidden');
     const [messages, total] = await this.messageRepository.findAndCount({
       take: limit,
       skip: skip,

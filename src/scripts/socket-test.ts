@@ -91,6 +91,7 @@ function bootstrap() {
 
   socket.onAny((event, ...args) => {
     if (event === MICROSERVICE_EVENTS.receive_message) return;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     console.log('Event:', event, ...args);
   });
 

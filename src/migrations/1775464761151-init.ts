@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class Init1774604498318 implements MigrationInterface {
-  name = 'Init1774604498318';
+export class Init1775464761151 implements MigrationInterface {
+  name = 'Init1775464761151';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
@@ -11,7 +11,7 @@ export class Init1774604498318 implements MigrationInterface {
       `CREATE TABLE "user" ("created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP WITH TIME ZONE, "id" SERIAL NOT NULL, "name" character varying NOT NULL, "password" character varying NOT NULL, "email" character varying NOT NULL, "status" integer NOT NULL DEFAULT '1', "role" integer NOT NULL DEFAULT '1', "refreshToken" character varying, CONSTRAINT "PK_cace4a159ff9f2512dd42373760" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
-      `CREATE TABLE "conversation_participants" ("created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP WITH TIME ZONE, "id" SERIAL NOT NULL, "role" integer NOT NULL, "userId" integer NOT NULL, "conversationId" integer NOT NULL, CONSTRAINT "UQ_e43efbfa3b850160b5b2c50e3ec" UNIQUE ("userId", "conversationId"), CONSTRAINT "PK_61b51428ad9453f5921369fbe94" PRIMARY KEY ("id"))`,
+      `CREATE TABLE "conversation_participants" ("created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP WITH TIME ZONE, "id" SERIAL NOT NULL, "userId" integer NOT NULL, "conversationId" integer NOT NULL, "role" integer NOT NULL, CONSTRAINT "UQ_e43efbfa3b850160b5b2c50e3ec" UNIQUE ("userId", "conversationId"), CONSTRAINT "PK_61b51428ad9453f5921369fbe94" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX "IDX_18c4ba3b127461649e5f5039db" ON "conversation_participants" ("userId") `,
@@ -20,7 +20,7 @@ export class Init1774604498318 implements MigrationInterface {
       `CREATE INDEX "IDX_4453e20858b14ab765a09ad728" ON "conversation_participants" ("conversationId") `,
     );
     await queryRunner.query(
-      `CREATE TABLE "message" ("created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP WITH TIME ZONE, "id" SERIAL NOT NULL, "content" character varying NOT NULL, "type" integer NOT NULL DEFAULT '1', "conversationId" integer NOT NULL, "senderId" integer, CONSTRAINT "PK_ba01f0a3e0123651915008bc578" PRIMARY KEY ("id"))`,
+      `CREATE TABLE "message" ("created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP WITH TIME ZONE, "id" SERIAL NOT NULL, "conversationId" integer NOT NULL, "senderId" integer NOT NULL, "content" character varying NOT NULL, "type" integer NOT NULL DEFAULT '1', CONSTRAINT "PK_ba01f0a3e0123651915008bc578" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX "IDX_7cf4a4df1f2627f72bf6231635" ON "message" ("conversationId") `,

@@ -23,8 +23,9 @@ export enum CONVERSATION_TYPE {
 }
 
 export enum CONVERSATION_USER_ROLE {
-  USER = 1,
-  ADMIN = 2,
+  MEMBER = 0,
+  ADMIN = 1,
+  OWNER = 2,
 }
 
 export enum MESSAGE_TYPE {
@@ -53,6 +54,11 @@ export enum NodeEnvType {
 
 export type JoinConversationPayload = {
   conversationId: number;
+};
+
+export type TypingMessagePayload = {
+  conversationId: number;
+  userId: number;
 };
 
 export type SendMessagePayload = {

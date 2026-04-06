@@ -10,15 +10,15 @@ import { ConversationParticipantRepository } from 'src/repository/conversation-p
 import { ConversationRepository } from 'src/repository/conversation.repository';
 import { UserRepository } from 'src/repository/user.repository';
 import { CONVERSATION_TYPE, CONVERSATION_USER_ROLE } from 'src/types/global';
-import { getPaginationData } from 'src/utils/common.utils';
+import { createPrivateConversationHash, getPaginationData } from 'src/utils/common.utils';
 import { In, Not } from 'typeorm';
 
 @Injectable()
 export class ConversationService {
   constructor(
-    private userRepository: UserRepository,
-    private conversationRepository: ConversationRepository,
-    private conversationParticipantsRepository: ConversationParticipantRepository,
+    private readonly userRepository: UserRepository,
+    private readonly conversationRepository: ConversationRepository,
+    private readonly participantsRepository: ConversationParticipantRepository,
   ) {}
 
   async createPrivateChat(user: User, payload: CreatePrivateChatDto): Promise<Conversation> {
@@ -26,8 +26,7 @@ export class ConversationService {
     if (partnerId == user.id) throw new BadRequestException('Two users is a same person');
     const user2 = await this.userRepository.findOneBy({ id: partnerId });
     if (!user2) throw new BadRequestException(`${partnerId} not found`);
-    const hash =
-      user.id < partnerId ? `1_1_${user.id}_${partnerId}` : `1_1_${partnerId}_${user.id}`;
+    const hash = createPrivateConversationHash(user.id, partnerId);
     const findConversation = await this.conversationRepository.findOneBy({ hash });
     if (findConversation) throw new BadRequestException('Conversation is already exist');
     const newConversation = this.conversationRepository.create({
@@ -37,20 +36,20 @@ export class ConversationService {
     });
     const savedConversation = await this.conversationRepository.save(newConversation);
     if (!savedConversation) throw new BadRequestException('Create conversation failure!');
-    const newParticipant1 = this.conversationParticipantsRepository.create({
+    const newParticipant1 = this.participantsRepository.create({
       user: { id: user.id },
       conversation: { id: savedConversation.id },
-      role: CONVERSATION_USER_ROLE.USER,
+      role: CONVERSATION_USER_ROLE.OWNER,
     });
-    const savedParticipant1 = await this.conversationParticipantsRepository.save(newParticipant1);
+    const savedParticipant1 = await this.participantsRepository.save(newParticipant1);
     if (!savedParticipant1) throw new BadRequestException('Create conversation failure!');
 
-    const newParticipant2 = this.conversationParticipantsRepository.create({
+    const newParticipant2 = this.participantsRepository.create({
       user: { id: partnerId },
       conversation: { id: savedConversation.id },
-      role: CONVERSATION_USER_ROLE.USER,
+      role: CONVERSATION_USER_ROLE.MEMBER,
     });
-    const savedParticipant2 = await this.conversationParticipantsRepository.save(newParticipant2);
+    const savedParticipant2 = await this.participantsRepository.save(newParticipant2);
     if (!savedParticipant2) throw new BadRequestException('Create conversation failure!');
     return savedConversation;
   }
@@ -62,7 +61,7 @@ export class ConversationService {
     const { page = 1, limit = 10 } = query;
     const skip = (page - 1) * limit;
 
-    const [participants, total] = await this.conversationParticipantsRepository.findAndCount({
+    const [participants, total] = await this.participantsRepository.findAndCount({
       take: limit,
       skip: skip,
       order: { createdAt: 'DESC', id: 'DESC' },
@@ -74,7 +73,7 @@ export class ConversationService {
       .map((participant) => participant.conversation.id);
 
     if (privateConversationIds.length > 0) {
-      const otherParticipants = await this.conversationParticipantsRepository.find({
+      const otherParticipants = await this.participantsRepository.find({
         where: { conversation: { id: In(privateConversationIds) }, user: { id: Not(user.id) } },
         relations: { user: true },
       });

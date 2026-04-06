@@ -1,9 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsInt, Min } from 'class-validator';
 import { PaginationQueryDto, PaginationResponseDto } from './common.dto';
 import { MESSAGE_TYPE } from 'src/types/global';
 
 export class GetMessageQueryDto extends PaginationQueryDto {
   @ApiProperty({ type: Number, name: 'conversationId' })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
   conversationId: number;
 }
 

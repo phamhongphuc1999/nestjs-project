@@ -13,8 +13,8 @@ import { BaseEntity } from './base.entity';
 import { Conversation } from './conversation.entity';
 import { User } from './user.entity';
 
-@Unique(['user', 'conversation'])
 @Entity()
+@Unique(['userId', 'conversationId'])
 export class ConversationParticipants extends BaseEntity {
   @ApiProperty({ type: Number, name: 'id' })
   @PrimaryGeneratedColumn()

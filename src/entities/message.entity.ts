@@ -1,10 +1,19 @@
 import { MESSAGE_TYPE } from 'src/types/global';
-import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  Unique,
+} from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { Conversation } from './conversation.entity';
 import { User } from './user.entity';
 
 @Entity()
+@Unique(['conversationId', 'senderId'])
 export class Message extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;

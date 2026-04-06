@@ -12,7 +12,7 @@ import { MailService } from '../mail.service/mail.service';
 @Injectable()
 export class UserService {
   constructor(
-    private userRepository: UserRepository,
+    private readonly userRepository: UserRepository,
     private readonly mailService: MailService,
   ) {}
 

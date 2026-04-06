@@ -36,7 +36,7 @@ export class GoogleSigninDto {
 export class GoogleRecoverPasswordDto extends GoogleSigninDto {}
 
 export class PasswordLoginDto {
-  @ApiProperty({ type: String, name: 'Email', example: 'example@gmail.com' })
+  @ApiProperty({ type: String, name: 'email', example: 'example@gmail.com' })
   @IsEmail()
   @IsNotEmpty()
   email: string;

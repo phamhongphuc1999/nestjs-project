@@ -1,4 +1,10 @@
-import { ForbiddenException, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -11,7 +17,14 @@ import { createClient, RedisClientType } from 'redis';
 import { Server } from 'socket.io';
 import { MICROSERVICE_EVENTS } from 'src/configs/enum.config';
 import { ConversationParticipantRepository } from 'src/repository/conversation-participants.repository';
-import { AppSocket, JoinConversationPayload, SendMessagePayload } from 'src/types/global';
+import { MessageRepository } from 'src/repository/message.repository';
+import {
+  AppSocket,
+  JoinConversationPayload,
+  MESSAGE_TYPE,
+  SendMessagePayload,
+  TypingMessagePayload,
+} from 'src/types/global';
 import { AppSocketUtil } from './app-socket.util';
 
 @WebSocketGateway({ cors: { origin: '*' } })
@@ -23,16 +36,16 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
   private readonly redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 
   constructor(
-    private readonly conversationParticipantsRepository: ConversationParticipantRepository,
+    private readonly participantsRepository: ConversationParticipantRepository,
+    private readonly messageRepository: MessageRepository,
   ) {}
 
   @WebSocketServer()
   server: Server;
 
   afterInit(server: Server) {
-    if (this.redisPubClient && this.redisSubClient) {
+    if (this.redisPubClient && this.redisSubClient)
       server.adapter(createAdapter(this.redisPubClient, this.redisSubClient));
-    }
   }
 
   async onModuleInit() {
@@ -75,9 +88,9 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
       if (cached) return true;
     }
 
-    const participant = await this.conversationParticipantsRepository.findOne({
+    const participant = await this.participantsRepository.findOne({
       select: { id: true },
-      where: { conversation: { id: conversationId }, user: { id: userId } },
+      where: { conversationId, userId },
     });
 
     if (participant && this.redisClient) {
@@ -93,20 +106,45 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
     @ConnectedSocket() client: AppSocket,
   ) {
     const conversationId = Number(data?.conversationId);
-    this.logger.log(
-      `join_conversation received: socket=${client.id} conversationId=${conversationId}`,
-    );
     if (!conversationId) throw new ForbiddenException('Conversation not found');
     const userId = AppSocketUtil.getUserId(client);
-    this.logger.log(`join_conversation userId=${userId} conversationId=${conversationId}`);
 
     const isParticipant = await this.isParticipant(conversationId, userId);
-    this.logger.log(`join_conversation isParticipant=${isParticipant}`);
     if (!isParticipant) throw new ForbiddenException('User is not a participant');
 
     await client.join(AppSocketUtil.conversationRoom(conversationId));
-    this.logger.log(`join_conversation success: userId=${userId} conversationId=${conversationId}`);
     client.emit(MICROSERVICE_EVENTS.joined, { conversationId });
+  }
+
+  @SubscribeMessage(MICROSERVICE_EVENTS.typing_message)
+  async typingMessage(
+    @MessageBody() data: TypingMessagePayload,
+    @ConnectedSocket() client: AppSocket,
+  ) {
+    const conversationId = Number(data.conversationId);
+    if (!conversationId) throw new ForbiddenException('Conversation not found');
+    const userId = AppSocketUtil.getUserId(client);
+    const isParticipant = await this.isParticipant(conversationId, userId);
+    if (!isParticipant) return;
+
+    client
+      .to(AppSocketUtil.conversationRoom(conversationId))
+      .emit(MICROSERVICE_EVENTS.typing_message, { conversationId, userId });
+  }
+
+  @SubscribeMessage(MICROSERVICE_EVENTS.stop_typing)
+  async handleStopTyping(
+    @MessageBody() data: TypingMessagePayload,
+    @ConnectedSocket() client: AppSocket,
+  ) {
+    const conversationId = Number(data?.conversationId);
+    const userId = AppSocketUtil.getUserId(client);
+    const isParticipant = await this.isParticipant(conversationId, userId);
+    if (!isParticipant) return;
+
+    client
+      .to(AppSocketUtil.conversationRoom(conversationId))
+      .emit(MICROSERVICE_EVENTS.stop_typing, { conversationId, userId });
   }
 
   @SubscribeMessage(MICROSERVICE_EVENTS.send_message)
@@ -114,7 +152,6 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
     @MessageBody() data: SendMessagePayload,
     @ConnectedSocket() client: AppSocket,
   ) {
-    this.logger.log(`send_message received: socket=${client.id} data=${JSON.stringify(data)}`);
     const conversationId = Number(data?.conversationId);
     if (!conversationId) throw new ForbiddenException('Conversation not found');
     const userId = AppSocketUtil.getUserId(client);
@@ -122,12 +159,23 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
     const isParticipant = await this.isParticipant(conversationId, userId);
     if (!isParticipant) throw new ForbiddenException('User is not a participant');
 
-    const payload = { conversationId, senderId: userId, message: data?.message ?? '' };
+    const messageContent = (data?.message ?? '').trim();
+    if (!messageContent) throw new BadRequestException('Message is empty');
+
+    const newMessage = this.messageRepository.create({
+      conversationId,
+      senderId: userId,
+      content: messageContent,
+      type: MESSAGE_TYPE.TEXT,
+    });
+    const savedMessage = await this.messageRepository.save(newMessage);
+    if (!savedMessage) throw new BadRequestException('Save message failure!');
+
+    const payload = { conversationId, senderId: userId, message: messageContent };
 
     this.server
       .to(AppSocketUtil.conversationRoom(conversationId))
       .emit(MICROSERVICE_EVENTS.receive_message, payload);
-    this.logger.log(`send_message success: userId=${userId} conversationId=${conversationId}`);
     client.emit(MICROSERVICE_EVENTS.message_sent, payload);
   }
 }
