@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsInt, IsOptional, Max, Min } from 'class-validator';
 
@@ -8,14 +8,14 @@ export class OnlyOkResponseDto {
 }
 
 export class PaginationQueryDto {
-  @ApiProperty({ type: Number, name: 'page', nullable: true, default: 1 })
+  @ApiPropertyOptional({ type: Number, name: 'page', nullable: true, default: 1 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   page?: number;
 
-  @ApiProperty({ type: Number, name: 'limit', nullable: true, default: 10 })
+  @ApiPropertyOptional({ type: Number, name: 'limit', nullable: true, default: 10 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()

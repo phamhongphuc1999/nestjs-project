@@ -24,7 +24,6 @@ export class MessageController {
     @CurrentUser() user: User,
     @Query() query: GetMessageQueryDto,
   ): Promise<GetMessageResponseDto> {
-    console.log('🚀 ~ MessageController ~ getMessages ~ query:', query);
     return this.messageService.getMessages(user, query);
   }
 }
