@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { OnlyOkResponseDto } from 'src/dto/common.dto';
-import { FindUserQueryDto } from 'src/dto/user.dto';
+import { FindUserQueryDto, FindUserResponseDto } from 'src/dto/user.dto';
 import { User } from 'src/entities';
 import { UserRepository } from 'src/repository/user.repository';
 import { SEND_EMAIL_TYPE, TOKEN_TYPE, USER_ROLE, USER_STATUS } from 'src/types/global';
@@ -28,7 +28,7 @@ export class UserService {
     return { isOk: true };
   }
 
-  async findUsers(query: FindUserQueryDto) {
+  async findUsers(query: FindUserQueryDto): Promise<FindUserResponseDto> {
     const { page = 1, limit = 10, searchText } = query;
     const skip = (page - 1) * limit;
 
@@ -44,6 +44,11 @@ export class UserService {
       order: { createdAt: 'DESC', id: 'DESC' },
       where,
     });
-    return { data: users, metadata: getPaginationData(limit, users.length, total, page) };
+    return {
+      data: users.map((user) => {
+        return { id: user.id, name: user.name, email: user.email };
+      }),
+      metadata: getPaginationData(limit, users.length, total, page),
+    };
   }
 }

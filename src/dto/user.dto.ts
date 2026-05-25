@@ -15,8 +15,14 @@ export class GetUserResponseDto {
   @ApiProperty({ type: Number, name: 'role' })
   role: USER_ROLE;
 
+  @ApiProperty({ type: String, name: 'avatarUrl' })
+  avatarUrl: string;
+
   @ApiProperty({ type: Number, name: 'status' })
   status: USER_STATUS;
+
+  @ApiProperty({ type: Date, name: 'lastSeenAt' })
+  lastSeenAt: Date;
 }
 
 export class FindUserQueryDto extends PaginationQueryDto {
@@ -37,7 +43,7 @@ export class FindUserItemDto {
 
 export class FindUserResponseDto {
   @ApiProperty({ type: FindUserItemDto, name: 'data' })
-  data: FindUserItemDto;
+  data: Array<FindUserItemDto>;
 
   @ApiProperty({ type: PaginationResponseDto, name: 'metadata' })
   metadata: PaginationResponseDto;

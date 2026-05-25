@@ -65,9 +65,29 @@ export class ConversationService {
       take: limit,
       skip: skip,
       order: { createdAt: 'DESC', id: 'DESC' },
-      relations: { conversation: true },
+      relations: { conversation: { lastMessage: { sender: true } } },
       where: { user: { id: user.id } },
     });
+
+    const buildLastMessage = (
+      conv: Conversation,
+    ): {
+      id: number;
+      content: string;
+      senderId: number;
+      senderName: string;
+      createdAt: Date;
+    } | null => {
+      if (!conv.lastMessage) return null;
+      return {
+        id: conv.lastMessage.id,
+        content: conv.lastMessage.content,
+        senderId: conv.lastMessage.senderId,
+        senderName: conv.lastMessage.sender?.name ?? 'Deleted User',
+        createdAt: conv.lastMessage.createdAt,
+      };
+    };
+
     const privateConversationIds = participants
       .filter((participant) => participant.conversation?.type === CONVERSATION_TYPE.PRIVATE)
       .map((participant) => participant.conversation.id);
@@ -91,6 +111,7 @@ export class ConversationService {
           updatedAt: participant.updatedAt,
           groupType: participant.conversation.type,
           yourParticipant: { id: participant.userId, name: user.name, email: user.email },
+          lastMessage: buildLastMessage(participant.conversation),
         };
         if (participant.conversation.type == CONVERSATION_TYPE.PRIVATE) {
           const anotherParticipant = otherParticipantsMap.get(participant.conversation.id);
@@ -120,6 +141,7 @@ export class ConversationService {
         updatedAt: participant.updatedAt,
         groupType: participant.conversation.type,
         yourParticipant: { id: participant.userId, name: user.name, email: user.email },
+        lastMessage: buildLastMessage(participant.conversation),
       };
     });
     return { data, metadata: getPaginationData(limit, data.length, total, page) };

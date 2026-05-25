@@ -17,6 +17,7 @@ import { createClient, RedisClientType } from 'redis';
 import { Server } from 'socket.io';
 import { MICROSERVICE_EVENTS } from 'src/configs/enum.config';
 import { ConversationParticipantRepository } from 'src/repository/conversation-participants.repository';
+import { ConversationRepository } from 'src/repository/conversation.repository';
 import { MessageRepository } from 'src/repository/message.repository';
 import {
   AppSocket,
@@ -37,6 +38,7 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     private readonly participantsRepository: ConversationParticipantRepository,
+    private readonly conversationRepository: ConversationRepository,
     private readonly messageRepository: MessageRepository,
   ) {}
 
@@ -98,6 +100,23 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
       await this.redisClient.expire(cacheKey, 300);
     }
     return !!participant;
+  }
+
+  /** Auto-join user to all their conversation rooms when socket connects */
+  async handleConnection(client: AppSocket) {
+    try {
+      const userId = AppSocketUtil.getUserId(client);
+      const participantRecords = await this.participantsRepository.find({
+        where: { userId },
+        select: { conversationId: true },
+      });
+      for (const record of participantRecords) {
+        await client.join(AppSocketUtil.conversationRoom(record.conversationId));
+      }
+      this.logger.debug(`Socket ${client.id} auto-joined ${participantRecords.length} rooms`);
+    } catch {
+      // Socket will fail auth on first subscribe if token is invalid
+    }
   }
 
   @SubscribeMessage(MICROSERVICE_EVENTS.join_conversation)
@@ -170,6 +189,12 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
     });
     const savedMessage = await this.messageRepository.save(newMessage);
     if (!savedMessage) throw new BadRequestException('Save message failure!');
+
+    // Update conversation metadata for last message & activity
+    await this.conversationRepository.update(conversationId, {
+      lastMessageId: savedMessage.id,
+      lastActivityAt: new Date(),
+    });
 
     const payload = { conversationId, senderId: userId, message: messageContent };
 

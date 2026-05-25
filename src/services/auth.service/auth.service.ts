@@ -135,7 +135,11 @@ export class AuthService {
   async signinWithPassword(
     payload: PasswordLoginDto,
   ): Promise<AccessTokenResponseDto & { refreshToken: string }> {
-    const findUser = await this.userRepository.findOneBy({ email: payload.email });
+    if (!payload.email && !payload.name)
+      throw new BadRequestException('Must enter Email or Username');
+    const findUser = payload.name
+      ? await this.userRepository.findOneBy({ name: payload.name })
+      : await this.userRepository.findOneBy({ email: payload.email });
     if (!findUser) throw new BadRequestException('Email or password is incorrect!');
     const isPasswordOk = await verifyPasswordHash(findUser.password, payload.password);
     if (!isPasswordOk) throw new BadRequestException('Email or password is incorrect!');

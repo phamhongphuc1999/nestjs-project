@@ -23,6 +23,23 @@ export class AnotherParticipantDto {
   email: string;
 }
 
+export class LastMessageDto {
+  @ApiProperty({ type: Number })
+  id: number;
+
+  @ApiProperty({ type: String })
+  content: string;
+
+  @ApiProperty({ type: Number })
+  senderId: number;
+
+  @ApiProperty({ type: String })
+  senderName: string;
+
+  @ApiProperty({ type: String })
+  createdAt: Date;
+}
+
 export class ConversationListItemDto {
   @ApiProperty({ type: Number, name: 'conversationId' })
   conversationId: number;
@@ -53,6 +70,9 @@ export class ConversationListItemDto {
 
   @ApiProperty({ type: AnotherParticipantDto, name: 'anotherParticipant', nullable: true })
   anotherParticipant?: AnotherParticipantDto;
+
+  @ApiProperty({ type: LastMessageDto, name: 'lastMessage', nullable: true })
+  lastMessage?: LastMessageDto | null;
 }
 
 export class GetListConversationResponseDto {

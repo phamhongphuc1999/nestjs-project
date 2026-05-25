@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsString, IsStrongPassword } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, IsStrongPassword } from 'class-validator';
 
 export class AccessTokenResponseDto {
   @ApiProperty({ type: String, name: 'accessToken' })
@@ -36,13 +36,22 @@ export class GoogleSigninDto {
 export class GoogleRecoverPasswordDto extends GoogleSigninDto {}
 
 export class PasswordLoginDto {
-  @ApiProperty({ type: String, name: 'email', example: 'example@gmail.com' })
-  @IsEmail()
-  @IsNotEmpty()
-  email: string;
+  @ApiProperty({
+    type: String,
+    name: 'email',
+    example: 'example@gmail.com',
+    nullable: true,
+    required: false,
+  })
+  @IsOptional()
+  email?: string;
+
+  @ApiProperty({ type: String, name: 'name', example: '', nullable: true, required: false })
+  @IsOptional()
+  name?: string;
 
   @ApiProperty({ type: String, name: 'password' })
-  @IsStrongPassword()
+  @IsString()
   password: string;
 }
 

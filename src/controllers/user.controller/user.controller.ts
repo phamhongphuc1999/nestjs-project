@@ -2,7 +2,7 @@ import { BadRequestException, Controller, Get, Post, Query, UseGuards } from '@n
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from 'src/Decorations/user.decoration';
 import { OnlyOkResponseDto } from 'src/dto/common.dto';
-import { FindUserQueryDto, GetUserResponseDto } from 'src/dto/user.dto';
+import { FindUserQueryDto, FindUserResponseDto, GetUserResponseDto } from 'src/dto/user.dto';
 import { User } from 'src/entities';
 import { TokenSecurityGuard } from 'src/guards/access-token-security.guard';
 import { UserService } from 'src/services/user.service/user.service';
@@ -24,7 +24,9 @@ export class UserController {
       name: user.name,
       email: user.email,
       role: user.role,
+      avatarUrl: user.avatarUrl,
       status: user.status,
+      lastSeenAt: user.lastSeenAt,
     };
   }
 
@@ -39,6 +41,9 @@ export class UserController {
     else throw new BadRequestException('Account has been already active');
   }
 
+  @ApiOperation({ summary: 'Find user' })
+  @ApiResponse({ status: 200, description: '', type: FindUserResponseDto })
+  @Get('/find-user')
   findUsers(@Query() query: FindUserQueryDto) {
     return this.userService.findUsers(query);
   }
