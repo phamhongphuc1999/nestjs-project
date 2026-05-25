@@ -1,12 +1,8 @@
 -- ============================================================
--- KIẾN TRÚC DATABASE - Chat Application (NestJS + PostgreSQL)
+-- DATABASE ARCHITECTURE - Chat Application (NestJS + PostgreSQL)
 -- ============================================================
--- Phiên bản cải tiến - Tối ưu cho real-time chat
--- ============================================================
-
--- ============================================================
--- 1. BẢNG: user
--- ============================================================
+-- Improved version - Optimized for real-time chat
+-- =========================================================
 CREATE TABLE "user" (
     "created_at"       TIMESTAMPTZ NOT NULL DEFAULT now(),
     "updated_at"       TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -19,14 +15,18 @@ CREATE TABLE "user" (
     "password"         VARCHAR NOT NULL,
     "email"            VARCHAR NOT NULL,
 
-    "status"           INTEGER NOT NULL DEFAULT 1,     -- 1=EMAIL_INACTIVE, 2=ACTIVE, 3=INACTIVE
-    "role"             INTEGER NOT NULL DEFAULT 1,     -- 1=USER, 2=ADMIN
+    "avatarUrl"        VARCHAR DEFAULT NULL,                   -- Profile picture URL
+
+    "status"           INTEGER NOT NULL DEFAULT 1,             -- 1=EMAIL_INACTIVE, 2=ACTIVE, 3=INACTIVE
+    "role"             INTEGER NOT NULL DEFAULT 1,             -- 1=USER, 2=ADMIN
+
+    "lastSeenAt"       TIMESTAMPTZ DEFAULT NULL,               -- Last online timestamp
 
     "refreshToken"     VARCHAR DEFAULT NULL
 );
 
 -- ============================================================
--- 2. BẢNG: conversation
+-- 2. TABLE: conversation
 -- ============================================================
 CREATE TABLE "conversation" (
     "created_at"       TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -36,16 +36,16 @@ CREATE TABLE "conversation" (
     "id"               SERIAL NOT NULL,
     CONSTRAINT "PK_conversation" PRIMARY KEY ("id"),
 
-    "type"             INTEGER NOT NULL,                     -- 1=GROUP, 2=PRIVATE
-    "name"             VARCHAR,                               -- Nullable cho Private chat
-    "hash"             VARCHAR NOT NULL,
+    "type"             INTEGER NOT NULL,                       -- 1=GROUP, 2=PRIVATE
+    "name"             VARCHAR DEFAULT NULL,                   -- Nullable for Private chat
+    "hash"             VARCHAR NOT NULL,                       -- Used to create unique conversation
 
-    "lastMessageId"    INTEGER,                               -- Tin nhắn mới nhất
-    "lastActivityAt"   TIMESTAMPTZ                            -- Dùng để sort danh sách chat
+    "lastMessageId"    INTEGER DEFAULT NULL,                   -- FK -> message.id (nullable, optional)
+    "lastActivityAt"   TIMESTAMPTZ DEFAULT NULL                -- Used for sorting chat list
 );
 
 -- ============================================================
--- 3. BẢNG: conversation_participants
+-- 3. TABLE: conversation_participants
 -- ============================================================
 CREATE TABLE "conversation_participants" (
     "created_at"       TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -57,15 +57,16 @@ CREATE TABLE "conversation_participants" (
 
     "userId"           INTEGER NOT NULL,
     "conversationId"   INTEGER NOT NULL,
-    "role"             INTEGER NOT NULL,                     -- 0=MEMBER, 1=ADMIN, 2=OWNER
+    "role"             INTEGER NOT NULL,                       -- 0=MEMBER, 1=ADMIN, 2=OWNER
 
-    "lastReadMessageId" INTEGER,                             -- Dùng để tính unread count
+    "lastReadMessageId" INTEGER DEFAULT NULL,                  -- Used to calculate unread count (nullable for new members)
+    "joinedAt"          TIMESTAMPTZ DEFAULT NULL,              -- When user joined the conversation
 
     CONSTRAINT "UQ_user_conversation" UNIQUE ("userId", "conversationId")
 );
 
 -- ============================================================
--- 4. BẢNG: message
+-- 4. TABLE: message
 -- ============================================================
 CREATE TABLE "message" (
     "created_at"       TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -76,17 +77,19 @@ CREATE TABLE "message" (
     CONSTRAINT "PK_message" PRIMARY KEY ("id"),
 
     "conversationId"   INTEGER NOT NULL,
-    "senderId"         INTEGER,                              -- Có thể NULL nếu user bị xóa
+    "senderId"         INTEGER,                              -- Can be NULL if user is deleted
 
-    "content"          TEXT NOT NULL,
-    "type"             INTEGER NOT NULL DEFAULT 1,           -- 1=TEXT, 2=IMAGE, 3=VIDEO, 4=SYSTEM, 5=FILE...
+    "content"          TEXT NOT NULL,                          -- Use TEXT instead of VARCHAR
+    "type"             INTEGER NOT NULL DEFAULT 1,             -- 1=TEXT, 2=IMAGE, 3=VIDEO, 4=SYSTEM, 5=FILE...
 
-    "replyToId"        INTEGER,                               -- Hỗ trợ trả lời tin nhắn
-    "metadata"         JSONB                                  -- Lưu thêm thông tin (url, file info, emoji...)
+    "replyToId"        INTEGER DEFAULT NULL,                   -- Supports message reply (self-reference FK)
+    "metadata"         JSONB DEFAULT '{}'::jsonb               -- Stores extra info (url, file info, emoji...)
+
+    -- NOTE: No UNIQUE(conversationId, senderId) -- a user can send multiple messages
 );
 
 -- ============================================================
--- INDEXES (Tối ưu hiệu suất)
+-- INDEXES (Performance optimization)
 -- ============================================================
 
 CREATE INDEX "IDX_conversation_participants_userId" 

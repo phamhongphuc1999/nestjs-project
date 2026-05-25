@@ -24,6 +24,10 @@ export class User extends BaseEntity {
   @IsEmail()
   email: string;
 
+  @ApiProperty({ type: String, name: 'avatarUrl' })
+  @Column({ type: String, nullable: true })
+  avatarUrl: string;
+
   @ApiProperty({ type: Number, name: 'status' })
   @Column({ type: Number, default: USER_STATUS.EMAIL_INACTIVE })
   status: USER_STATUS;
@@ -31,6 +35,10 @@ export class User extends BaseEntity {
   @ApiProperty({ type: Number, name: 'role' })
   @Column({ type: Number, default: USER_ROLE.USER })
   role: USER_ROLE;
+
+  @ApiProperty({ type: Date, name: 'lastSeenAt' })
+  @Column({ type: 'timestamptz', nullable: true })
+  lastSeenAt: Date;
 
   @ApiProperty({ type: String, name: 'refreshToken' })
   @Column({ type: String, nullable: true, select: false })

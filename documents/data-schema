@@ -1,7 +1,7 @@
 // ============================================================
-// KIẾN TRÚC DATABASE - Chat Application (NestJS + PostgreSQL)
+// DATABASE ARCHITECTURE - Chat Application (NestJS + PostgreSQL)
 // ============================================================
-// Phiên bản cải tiến - Tối ưu cho real-time chat
+// Improved version - Optimized for real-time chat
 
 Table user {
   id int [pk, increment]
@@ -10,8 +10,12 @@ Table user {
   password varchar [not null]
   email varchar [not null]
 
+  avatarUrl varchar                    // Profile picture URL
+
   status int [not null, default: 1]     // 1=EMAIL_INACTIVE, 2=ACTIVE, 3=INACTIVE
   role int [not null, default: 1]       // 1=USER, 2=ADMIN
+
+  lastSeenAt timestamptz               // Last online timestamp
 
   refreshToken varchar
 
@@ -24,11 +28,11 @@ Table conversation {
   id int [pk, increment]
 
   type int [not null]                   // 1=GROUP, 2=PRIVATE
-  name varchar                          // Nullable cho Private chat (có thể generate động)
-  hash varchar [not null]               // Dùng để tạo unique conversation
+  name varchar                          // Nullable for Private chat (can be auto-generated)
+  hash varchar [not null]               // Used to create unique conversation
 
-  lastMessageId int                     // FK -> message.id (tin nhắn mới nhất)
-  lastActivityAt timestamptz            // Thời gian hoạt động cuối cùng (rất quan trọng)
+  lastMessageId int                     // FK -> message.id (nullable, optional)
+  lastActivityAt timestamptz            // Last activity time (very important for sorting)
 
   created_at timestamptz [not null]
   updated_at timestamptz [not null]
@@ -42,32 +46,33 @@ Table conversation_participants {
   conversationId int [not null]
 
   role int [not null]                   // 0=MEMBER, 1=ADMIN, 2=OWNER
-  lastReadMessageId int                 // Dùng để tính unread count
+  lastReadMessageId int                 // Used to calculate unread count (nullable for new members)
+  joinedAt timestamptz                  // When user joined the conversation
 
   created_at timestamptz [not null]
   updated_at timestamptz [not null]
   deleted_at timestamptz
 
-  Note: 'Mỗi user chỉ tham gia 1 lần trong 1 conversation (Unique userId + conversationId)'
+  Note: 'Each user can only participate once per conversation (Unique userId + conversationId)'
 }
 
 Table message {
   id int [pk, increment]
 
   conversationId int [not null]
-  senderId int                          // Có thể NULL nếu user bị xóa
+  senderId int                          // Can be NULL if user is deleted
 
-  content text                          // Dùng TEXT thay vì VARCHAR
+  content text                          // Use TEXT instead of VARCHAR
   type int [not null, default: 1]       // 1=TEXT, 2=IMAGE, 3=VIDEO, 4=SYSTEM, 5=FILE,...
 
-  replyToId int                         // Hỗ trợ trả lời tin nhắn
-  metadata jsonb                        // Lưu thông tin bổ sung (image url, file info, emoji,...)
+  replyToId int                         // Supports message reply (self-reference FK)
+  metadata jsonb                        // Stores extra info (image url, file info, emoji,...)
 
   created_at timestamptz [not null]
   updated_at timestamptz [not null]
   deleted_at timestamptz
 
-  Note: 'Không để UNIQUE(conversationId, senderId)'
+  Note: 'No UNIQUE(conversationId, senderId) - a user can send multiple messages'
 }
 
 // ============================================================
@@ -96,7 +101,7 @@ Ref: conversation.lastMessageId > message.id                     // Optional
 // IDX_message_conversationId
 // IDX_message_senderId
 // IDX_message_created_at
-// IDX_message_conversationId_created_at (rất quan trọng khi load chat)
+// IDX_message_conversationId_created_at (critical for chat loading)
 
 // conversation
-// IDX_conversation_lastActivityAt (sort danh sách chat)
+// IDX_conversation_lastActivityAt (sort chat list)

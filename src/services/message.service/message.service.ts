@@ -35,8 +35,8 @@ export class MessageService {
       return {
         conversationId: message.conversationId,
         senderId: message.senderId,
-        senderName: message.sender.name,
-        senderEmail: message.sender.email,
+        senderName: message.sender?.name ?? 'Deleted User',
+        senderEmail: message.sender?.email ?? '',
         content: message.content,
         type: message.type,
       };
