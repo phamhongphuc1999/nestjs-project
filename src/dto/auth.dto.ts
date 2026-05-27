@@ -39,18 +39,18 @@ export class PasswordLoginDto {
   @ApiProperty({
     type: String,
     name: 'email',
-    example: 'example@gmail.com',
+    example: '',
     nullable: true,
     required: false,
   })
   @IsOptional()
   email?: string;
 
-  @ApiProperty({ type: String, name: 'name', example: '', nullable: true, required: false })
+  @ApiProperty({ type: String, name: 'name', example: 'peter1', nullable: true, required: false })
   @IsOptional()
   name?: string;
 
-  @ApiProperty({ type: String, name: 'password' })
+  @ApiProperty({ type: String, name: 'password', example: 'July@321' })
   @IsString()
   password: string;
 }

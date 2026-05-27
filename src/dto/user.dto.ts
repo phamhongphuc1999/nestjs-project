@@ -1,4 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
+import { IsOptional } from 'class-validator';
 import { USER_ROLE, USER_STATUS } from 'src/types/global';
 import { PaginationQueryDto, PaginationResponseDto } from './common.dto';
 
@@ -26,8 +28,18 @@ export class GetUserResponseDto {
 }
 
 export class FindUserQueryDto extends PaginationQueryDto {
-  @ApiProperty({ type: String, name: 'searchText' })
-  searchText: string;
+  @ApiProperty({ type: String, name: 'searchText', required: false })
+  @IsOptional()
+  searchText?: string;
+
+  @ApiProperty({ type: 'array', items: { type: 'number' }, name: 'userIds', required: false })
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) return value.map(Number);
+    if (typeof value === 'string') return value.split(',').map(Number);
+    return [Number(value)];
+  })
+  @IsOptional()
+  userIds?: Array<number>;
 }
 
 export class FindUserItemDto {

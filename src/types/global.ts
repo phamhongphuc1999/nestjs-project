@@ -34,6 +34,7 @@ export enum MESSAGE_TYPE {
   VIDEO = 3,
   SYSTEM = 4,
   FILE = 5,
+  EDIT_TEXT = 6,
 }
 
 export enum TOKEN_TYPE {

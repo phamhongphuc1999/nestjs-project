@@ -13,6 +13,9 @@ export class GetMessageQueryDto extends PaginationQueryDto {
 }
 
 export class MessageListResponseDto {
+  @ApiProperty({ type: Number, name: 'id' })
+  id: number;
+
   @ApiProperty({ type: Number, name: 'conversationId' })
   conversationId: number;
 
@@ -21,9 +24,6 @@ export class MessageListResponseDto {
 
   @ApiProperty({ type: String, name: 'senderName' })
   senderName: string;
-
-  @ApiProperty({ type: String, name: 'senderEmail' })
-  senderEmail: string;
 
   @ApiProperty({ type: String, name: 'content' })
   content: string;
@@ -39,3 +39,21 @@ export class GetMessageResponseDto {
   @ApiProperty({ type: PaginationResponseDto, name: 'metadata' })
   metadata: PaginationResponseDto;
 }
+
+export class EditMessageQueryDto extends PaginationQueryDto {
+  @ApiProperty({ type: Number, name: 'conversationId' })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  conversationId: number;
+
+  @ApiProperty({ type: Number, name: 'messageId' })
+  @Type(() => Number)
+  @IsInt()
+  messageId: number;
+
+  @ApiProperty({ type: String, name: 'content' })
+  content: string;
+}
+
+export class EditMessageResponseDto extends MessageListResponseDto {}

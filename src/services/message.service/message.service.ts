@@ -1,5 +1,7 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import {
+  EditMessageQueryDto,
+  EditMessageResponseDto,
   GetMessageQueryDto,
   GetMessageResponseDto,
   MessageListResponseDto,
@@ -7,6 +9,7 @@ import {
 import { User } from 'src/entities';
 import { ConversationParticipantRepository } from 'src/repository/conversation-participants.repository';
 import { MessageRepository } from 'src/repository/message.repository';
+import { MESSAGE_TYPE } from 'src/types/global';
 import { getPaginationData } from 'src/utils/common.utils';
 
 @Injectable()
@@ -33,14 +36,38 @@ export class MessageService {
     });
     const data: Array<MessageListResponseDto> = messages.map((message) => {
       return {
+        id: message.id,
         conversationId: message.conversationId,
         senderId: message.senderId,
         senderName: message.sender?.name ?? 'Deleted User',
-        senderEmail: message.sender?.email ?? '',
         content: message.content,
         type: message.type,
       };
     });
     return { data, metadata: getPaginationData(limit, messages.length, total, page) };
+  }
+
+  async editMessage(user: User, query: EditMessageQueryDto): Promise<EditMessageResponseDto> {
+    const { conversationId, messageId, content } = query;
+    const message = await this.messageRepository.findOneBy({
+      id: messageId,
+      conversationId,
+      senderId: user.id,
+    });
+    if (!message) throw new BadRequestException('Conversation not found');
+    if (message.type != MESSAGE_TYPE.TEXT && message.type != MESSAGE_TYPE.EDIT_TEXT)
+      throw new BadRequestException('Message must be text');
+    await this.messageRepository.update(
+      { id: messageId, conversationId, senderId: user.id },
+      { content, type: MESSAGE_TYPE.EDIT_TEXT },
+    );
+    return {
+      id: message.id,
+      conversationId,
+      senderId: user.id,
+      senderName: user.name,
+      content,
+      type: MESSAGE_TYPE.EDIT_TEXT,
+    };
   }
 }

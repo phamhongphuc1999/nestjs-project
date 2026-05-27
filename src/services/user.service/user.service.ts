@@ -29,7 +29,7 @@ export class UserService {
   }
 
   async findUsers(query: FindUserQueryDto): Promise<FindUserResponseDto> {
-    const { page = 1, limit = 10, searchText } = query;
+    const { page = 1, limit = 10, searchText, userIds } = query;
     const skip = (page - 1) * limit;
 
     const where: FindOptionsWhere<User>[] | FindOptionsWhere<User> = {
@@ -37,7 +37,7 @@ export class UserService {
       status: In([USER_STATUS.ACTIVE, USER_STATUS.EMAIL_INACTIVE]),
     };
     if (searchText) where.name = ILike(`%${searchText}%`);
-
+    if (userIds) where.id = In(userIds);
     const [users, total] = await this.userRepository.findAndCount({
       take: limit,
       skip: skip,
