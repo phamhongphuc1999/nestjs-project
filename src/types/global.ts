@@ -60,12 +60,16 @@ export type JoinConversationPayload = {
 
 export type TypingMessagePayload = {
   conversationId: number;
-  userId: number;
+  senderId: number;
 };
 
 export type SendMessagePayload = {
   conversationId: number;
-  message: string;
+  content: string;
+};
+
+export type EditMessagePayload = SendMessagePayload & {
+  messageId: number;
 };
 
 export type SocketData = {

@@ -21,6 +21,7 @@ import { ConversationRepository } from 'src/repository/conversation.repository';
 import { MessageRepository } from 'src/repository/message.repository';
 import {
   AppSocket,
+  EditMessagePayload,
   JoinConversationPayload,
   MESSAGE_TYPE,
   SendMessagePayload,
@@ -132,7 +133,7 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
     if (!isParticipant) throw new ForbiddenException('User is not a participant');
 
     await client.join(AppSocketUtil.conversationRoom(conversationId));
-    client.emit(MICROSERVICE_EVENTS.joined, { conversationId });
+    client.emit(MICROSERVICE_EVENTS.joined_conversation, { conversationId });
   }
 
   @SubscribeMessage(MICROSERVICE_EVENTS.typing_message)
@@ -148,7 +149,7 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
 
     client
       .to(AppSocketUtil.conversationRoom(conversationId))
-      .emit(MICROSERVICE_EVENTS.typing_message, { conversationId, userId });
+      .emit(MICROSERVICE_EVENTS.typing_message, { conversationId, senderId: userId });
   }
 
   @SubscribeMessage(MICROSERVICE_EVENTS.stop_typing)
@@ -163,7 +164,7 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
 
     client
       .to(AppSocketUtil.conversationRoom(conversationId))
-      .emit(MICROSERVICE_EVENTS.stop_typing, { conversationId, userId });
+      .emit(MICROSERVICE_EVENTS.stop_typing, { conversationId, senderId: userId });
   }
 
   @SubscribeMessage(MICROSERVICE_EVENTS.send_message)
@@ -171,14 +172,13 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
     @MessageBody() data: SendMessagePayload,
     @ConnectedSocket() client: AppSocket,
   ) {
-    const conversationId = Number(data?.conversationId);
-    if (!conversationId) throw new ForbiddenException('Conversation not found');
+    const { conversationId, content } = data;
     const userId = AppSocketUtil.getUserId(client);
 
     const isParticipant = await this.isParticipant(conversationId, userId);
     if (!isParticipant) throw new ForbiddenException('User is not a participant');
 
-    const messageContent = (data?.message ?? '').trim();
+    const messageContent = (content ?? '').trim();
     if (!messageContent) throw new BadRequestException('Message is empty');
 
     const newMessage = this.messageRepository.create({
@@ -196,11 +196,46 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
       lastActivityAt: new Date(),
     });
 
-    const payload = { conversationId, senderId: userId, message: messageContent };
+    const payload = {
+      id: savedMessage.id,
+      conversationId,
+      senderId: userId,
+      content: messageContent,
+      type: savedMessage.type,
+      replyToId: savedMessage.replyToId,
+    };
 
     this.server
       .to(AppSocketUtil.conversationRoom(conversationId))
       .emit(MICROSERVICE_EVENTS.receive_message, payload);
     client.emit(MICROSERVICE_EVENTS.message_sent, payload);
+  }
+
+  @SubscribeMessage(MICROSERVICE_EVENTS.edit_message)
+  async handleEditMessage(
+    @MessageBody() data: EditMessagePayload,
+    @ConnectedSocket() client: AppSocket,
+  ) {
+    const { conversationId, content } = data;
+    const userId = AppSocketUtil.getUserId(client);
+    const isParticipant = await this.isParticipant(conversationId, userId);
+    if (!isParticipant) throw new ForbiddenException('User is not a participant');
+
+    const messageContent = (content ?? '').trim();
+    if (!messageContent) throw new BadRequestException('Message is empty');
+    const oldMessage = await this.messageRepository.findOneBy({ id: data.messageId });
+    if (oldMessage?.content != messageContent) {
+      await this.messageRepository.update({ id: data.messageId }, { content: messageContent });
+      const payload = {
+        id: data.messageId,
+        conversationId,
+        senderId: userId,
+        editedContent: messageContent,
+      };
+      this.server
+        .to(AppSocketUtil.conversationRoom(conversationId))
+        .emit(MICROSERVICE_EVENTS.notify_edited_message, payload);
+      client.emit(MICROSERVICE_EVENTS.message_edited, payload);
+    }
   }
 }

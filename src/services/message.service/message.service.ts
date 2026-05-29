@@ -42,6 +42,7 @@ export class MessageService {
         senderName: message.sender?.name ?? 'Deleted User',
         content: message.content,
         type: message.type,
+        replyToId: message.replyToId,
       };
     });
     return { data, metadata: getPaginationData(limit, messages.length, total, page) };
@@ -68,6 +69,7 @@ export class MessageService {
       senderName: user.name,
       content,
       type: MESSAGE_TYPE.EDIT_TEXT,
+      replyToId: message.replyToId,
     };
   }
 }

@@ -30,6 +30,9 @@ export class MessageListResponseDto {
 
   @ApiProperty({ type: Number, name: 'type' })
   type: MESSAGE_TYPE;
+
+  @ApiProperty({ type: Number, name: 'replyToId' })
+  replyToId: number;
 }
 
 export class GetMessageResponseDto {

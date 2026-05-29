@@ -39,6 +39,6 @@ export class MessageController {
     @CurrentUser() user: User,
     @Query() query: EditMessageQueryDto,
   ): Promise<EditMessageResponseDto> {
-    return this.editMessage(user, query);
+    return this.messageService.editMessage(user, query);
   }
 }
