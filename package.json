@@ -37,6 +37,7 @@
     "class-validator": "^0.15.1",
     "cookie-parser": "^1.4.7",
     "google-auth-library": "^10.6.2",
+    "ioredis": "^5.11.0",
     "jsonwebtoken": "^9.0.3",
     "nest-winston": "^1.10.2",
     "nodemailer": "^8.0.2",

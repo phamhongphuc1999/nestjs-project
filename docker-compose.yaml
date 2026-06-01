@@ -19,12 +19,3 @@ services:
     ports:
       - '1025:1025' # SMTP server
       - '8025:8025' # Web UI
-  redis:
-    image: redis:7
-    container_name: redis
-    restart: always
-    ports:
-      - '6379:6379'
-    volumes:
-      - ./devops/redis_data:/data
-    command: redis-server --appendonly yes

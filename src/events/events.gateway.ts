@@ -13,8 +13,9 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { createAdapter } from '@socket.io/redis-adapter';
-import { createClient, RedisClientType } from 'redis';
+import { createClient, createCluster, RedisClientType, RedisClusterType } from 'redis';
 import { Server } from 'socket.io';
+import { AppConfigs } from 'src/configs/app.config';
 import { MICROSERVICE_EVENTS } from 'src/configs/enum.config';
 import { ConversationParticipantRepository } from 'src/repository/conversation-participants.repository';
 import { ConversationRepository } from 'src/repository/conversation.repository';
@@ -32,10 +33,9 @@ import { AppSocketUtil } from './app-socket.util';
 @WebSocketGateway({ cors: { origin: '*' } })
 export class EventsGateway implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(EventsGateway.name);
-  private redisClient?: RedisClientType;
+  private redisClient?: RedisClusterType;
   private redisPubClient?: RedisClientType;
   private redisSubClient?: RedisClientType;
-  private readonly redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 
   constructor(
     private readonly participantsRepository: ConversationParticipantRepository,
@@ -53,13 +53,17 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     try {
-      this.redisClient = createClient({ url: this.redisUrl });
+      this.redisClient = createCluster({
+        rootNodes: AppConfigs.CACHE_REDIS_URL.map((url) => {
+          return { url };
+        }),
+      });
       this.redisClient.on('error', (error) =>
         this.logger.warn(`Redis cache error: ${String(error)}`),
       );
       await this.redisClient.connect();
 
-      this.redisPubClient = createClient({ url: this.redisUrl });
+      this.redisPubClient = createClient({ url: AppConfigs.STREAM_REDIS_URL });
       this.redisSubClient = this.redisPubClient.duplicate();
       this.redisPubClient.on('error', (error) =>
         this.logger.warn(`Redis pub error: ${String(error)}`),
@@ -205,7 +209,7 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
       replyToId: savedMessage.replyToId,
     };
 
-    this.server
+    client.broadcast
       .to(AppSocketUtil.conversationRoom(conversationId))
       .emit(MICROSERVICE_EVENTS.receive_message, payload);
     client.emit(MICROSERVICE_EVENTS.message_sent, payload);
@@ -225,14 +229,17 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
     if (!messageContent) throw new BadRequestException('Message is empty');
     const oldMessage = await this.messageRepository.findOneBy({ id: data.messageId });
     if (oldMessage?.content != messageContent) {
-      await this.messageRepository.update({ id: data.messageId }, { content: messageContent });
+      await this.messageRepository.update(
+        { id: data.messageId },
+        { content: messageContent, type: MESSAGE_TYPE.EDIT_TEXT },
+      );
       const payload = {
         id: data.messageId,
         conversationId,
         senderId: userId,
         editedContent: messageContent,
       };
-      this.server
+      client.broadcast
         .to(AppSocketUtil.conversationRoom(conversationId))
         .emit(MICROSERVICE_EVENTS.notify_edited_message, payload);
       client.emit(MICROSERVICE_EVENTS.message_edited, payload);

@@ -1,11 +1,23 @@
 ## Nestjs project
 
-### Create and connect to local database
+### Create and connect to local services
 
-- create postgres database
+- create postgres database and mailhog service
 
 ```bash
 docker compose up -d
+```
+
+- create redis cache service (redis cluster)
+
+```bash
+docker compose -f redis-cache.docker-compose.yaml up -d
+```
+
+- create redis stream service (redis sentinel)
+
+```bash
+docker compose -f redis-stream.docker-compose.yaml up -d
 ```
 
 ### Run scripts

@@ -1,0 +1,245 @@
+networks:
+  redis-cluster-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+services:
+  redis-master-1:
+    image: redis:7
+    container_name: redis-master-1
+    restart: always
+    networks:
+      redis-cluster-net:
+        ipv4_address: 172.20.0.11
+    command:
+      - redis-server
+      - --cluster-enabled
+      - 'yes'
+      - --cluster-config-file
+      - nodes.conf
+      - --cluster-node-timeout
+      - '5000'
+      - --appendonly
+      - 'yes'
+      - --cluster-announce-ip
+      - '172.20.0.11'
+      - --cluster-announce-port
+      - '6379'
+      - --cluster-announce-bus-port
+      - '16379'
+    ports:
+      - '6380:6379'
+      - '16380:16379'
+    volumes:
+      - ./devops/redis_cluster/master_1:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-p', '6379', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis-master-2:
+    image: redis:7
+    container_name: redis-master-2
+    restart: always
+    networks:
+      redis-cluster-net:
+        ipv4_address: 172.20.0.12
+    command:
+      - redis-server
+      - --cluster-enabled
+      - 'yes'
+      - --cluster-config-file
+      - nodes.conf
+      - --cluster-node-timeout
+      - '5000'
+      - --appendonly
+      - 'yes'
+      - --cluster-announce-ip
+      - '172.20.0.12'
+      - --cluster-announce-port
+      - '6379'
+      - --cluster-announce-bus-port
+      - '16379'
+    ports:
+      - '6381:6379'
+      - '16381:16379'
+    volumes:
+      - ./devops/redis_cluster/master_2:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-p', '6379', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis-master-3:
+    image: redis:7
+    container_name: redis-master-3
+    restart: always
+    networks:
+      redis-cluster-net:
+        ipv4_address: 172.20.0.13
+    command:
+      - redis-server
+      - --cluster-enabled
+      - 'yes'
+      - --cluster-config-file
+      - nodes.conf
+      - --cluster-node-timeout
+      - '5000'
+      - --appendonly
+      - 'yes'
+      - --cluster-announce-ip
+      - '172.20.0.13'
+      - --cluster-announce-port
+      - '6379'
+      - --cluster-announce-bus-port
+      - '16379'
+    ports:
+      - '6382:6379'
+      - '16382:16379'
+    volumes:
+      - ./devops/redis_cluster/master_3:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-p', '6379', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis-replica-1:
+    image: redis:7
+    container_name: redis-replica-1
+    restart: always
+    networks:
+      redis-cluster-net:
+        ipv4_address: 172.20.0.21
+    command:
+      - redis-server
+      - --cluster-enabled
+      - 'yes'
+      - --cluster-config-file
+      - nodes.conf
+      - --cluster-node-timeout
+      - '5000'
+      - --appendonly
+      - 'yes'
+      - --cluster-announce-ip
+      - '172.20.0.21'
+      - --cluster-announce-port
+      - '6379'
+      - --cluster-announce-bus-port
+      - '16379'
+    ports:
+      - '6383:6379'
+      - '16383:16379'
+    volumes:
+      - ./devops/redis_cluster/replica_1_of_master_1:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-p', '6379', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis-replica-2:
+    image: redis:7
+    container_name: redis-replica-2
+    restart: always
+    networks:
+      redis-cluster-net:
+        ipv4_address: 172.20.0.22
+    command:
+      - redis-server
+      - --cluster-enabled
+      - 'yes'
+      - --cluster-config-file
+      - nodes.conf
+      - --cluster-node-timeout
+      - '5000'
+      - --appendonly
+      - 'yes'
+      - --cluster-announce-ip
+      - '172.20.0.22'
+      - --cluster-announce-port
+      - '6379'
+      - --cluster-announce-bus-port
+      - '16379'
+    ports:
+      - '6384:6379'
+      - '16384:16379'
+    volumes:
+      - ./devops/redis_cluster/replica_2_of_master_2:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-p', '6379', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis-replica-3:
+    image: redis:7
+    container_name: redis-replica-3
+    restart: always
+    networks:
+      redis-cluster-net:
+        ipv4_address: 172.20.0.23
+    command:
+      - redis-server
+      - --cluster-enabled
+      - 'yes'
+      - --cluster-config-file
+      - nodes.conf
+      - --cluster-node-timeout
+      - '5000'
+      - --appendonly
+      - 'yes'
+      - --cluster-announce-ip
+      - '172.20.0.23'
+      - --cluster-announce-port
+      - '6379'
+      - --cluster-announce-bus-port
+      - '16379'
+    ports:
+      - '6385:6379'
+      - '16385:16379'
+    volumes:
+      - ./devops/redis_cluster/replica_3_of_master_3:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-p', '6379', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis-cluster-init:
+    image: redis:7
+    container_name: redis-cluster-init
+    networks:
+      - redis-cluster-net
+    depends_on:
+      redis-master-1:
+        condition: service_healthy
+      redis-master-2:
+        condition: service_healthy
+      redis-master-3:
+        condition: service_healthy
+      redis-replica-1:
+        condition: service_healthy
+      redis-replica-2:
+        condition: service_healthy
+      redis-replica-3:
+        condition: service_healthy
+    entrypoint: []
+    command:
+      - redis-cli
+      - --cluster
+      - create
+      - '172.20.0.11:6379'
+      - '172.20.0.12:6379'
+      - '172.20.0.13:6379'
+      - '172.20.0.21:6379'
+      - '172.20.0.22:6379'
+      - '172.20.0.23:6379'
+      - --cluster-replicas
+      - '1'
+      - --cluster-yes
+    restart: on-failure
