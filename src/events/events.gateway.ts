@@ -13,7 +13,8 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { createAdapter } from '@socket.io/redis-adapter';
-import { createClient, createCluster, RedisClientType, RedisClusterType } from 'redis';
+import { Cluster } from 'ioredis';
+import { createClient, RedisClientType } from 'redis';
 import { Server } from 'socket.io';
 import { AppConfigs } from 'src/configs/app.config';
 import { MICROSERVICE_EVENTS } from 'src/configs/enum.config';
@@ -33,7 +34,7 @@ import { AppSocketUtil } from './app-socket.util';
 @WebSocketGateway({ cors: { origin: '*' } })
 export class EventsGateway implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(EventsGateway.name);
-  private redisClient?: RedisClusterType;
+  private redisClient?: Cluster;
   private redisPubClient?: RedisClientType;
   private redisSubClient?: RedisClientType;
 
@@ -53,11 +54,7 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     try {
-      this.redisClient = createCluster({
-        rootNodes: AppConfigs.CACHE_REDIS_URL.map((url) => {
-          return { url };
-        }),
-      });
+      this.redisClient = await AppSocketUtil.createCluster();
       this.redisClient.on('error', (error) =>
         this.logger.warn(`Redis cache error: ${String(error)}`),
       );
@@ -83,7 +80,7 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleDestroy() {
-    this.redisClient?.destroy();
+    this.redisClient?.disconnect();
     this.redisPubClient?.destroy();
     this.redisSubClient?.destroy();
   }
@@ -91,7 +88,7 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
   private async isParticipant(conversationId: number, userId: number): Promise<boolean> {
     const cacheKey = `conversation:${conversationId}:participants`;
     if (this.redisClient) {
-      const cached = await this.redisClient.sIsMember(cacheKey, String(userId));
+      const cached = await this.redisClient.sismember(cacheKey, String(userId));
       if (cached) return true;
     }
 
@@ -101,7 +98,7 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
     });
 
     if (participant && this.redisClient) {
-      await this.redisClient.sAdd(cacheKey, String(userId));
+      await this.redisClient.sadd(cacheKey, String(userId));
       await this.redisClient.expire(cacheKey, 300);
     }
     return !!participant;

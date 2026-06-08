@@ -29,3 +29,8 @@ export function createPrivateConversationHash(user1Id: number, user2Id: number) 
   const hash = user1Id < user2Id ? `1_1_${user1Id}_${user2Id}` : `1_1_${user2Id}_${user1Id}`;
   return hash;
 }
+
+export function parseUrl(url: string): { host: string; port: number } {
+  const u = new URL(url);
+  return { host: u.hostname, port: Number(u.port) };
+}

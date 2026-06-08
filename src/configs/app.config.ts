@@ -26,7 +26,7 @@ const AppConfigs = {
   FRONTEND_URL: process.env.FRONTEND_URL || '',
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
   STREAM_REDIS_URL: process.env.STREAM_REDIS_URL || '',
-  CACHE_REDIS_URL: (process.env.CACHE_REDIS_URL || '').split(','),
+  CACHE_REDIS_URL: process.env.CACHE_REDIS_URL || '',
 };
 
 export { AppConfigs };

@@ -1,3 +1,4 @@
+# Use Redis Cluster as a cache
 networks:
   redis-cluster-net:
     driver: bridge
@@ -9,7 +10,6 @@ services:
   redis-master-1:
     image: redis:7
     container_name: redis-master-1
-    restart: always
     networks:
       redis-cluster-net:
         ipv4_address: 172.20.0.11
@@ -43,7 +43,6 @@ services:
   redis-master-2:
     image: redis:7
     container_name: redis-master-2
-    restart: always
     networks:
       redis-cluster-net:
         ipv4_address: 172.20.0.12
@@ -77,7 +76,6 @@ services:
   redis-master-3:
     image: redis:7
     container_name: redis-master-3
-    restart: always
     networks:
       redis-cluster-net:
         ipv4_address: 172.20.0.13
@@ -111,7 +109,6 @@ services:
   redis-replica-1:
     image: redis:7
     container_name: redis-replica-1
-    restart: always
     networks:
       redis-cluster-net:
         ipv4_address: 172.20.0.21
@@ -145,7 +142,6 @@ services:
   redis-replica-2:
     image: redis:7
     container_name: redis-replica-2
-    restart: always
     networks:
       redis-cluster-net:
         ipv4_address: 172.20.0.22
@@ -179,7 +175,6 @@ services:
   redis-replica-3:
     image: redis:7
     container_name: redis-replica-3
-    restart: always
     networks:
       redis-cluster-net:
         ipv4_address: 172.20.0.23

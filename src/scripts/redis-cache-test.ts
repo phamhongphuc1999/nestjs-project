@@ -9,6 +9,7 @@
  */
 
 import Redis, { Cluster } from 'ioredis';
+import { parseUrl } from 'src/utils/common.utils';
 
 // ---------------------------------------------------------------------------
 // Config
@@ -16,11 +17,6 @@ import Redis, { Cluster } from 'ioredis';
 const RAW_URLS =
   process.env.CACHE_REDIS_URL ||
   'redis://localhost:6380,redis://localhost:6381,redis://localhost:6382';
-
-function parseUrl(url: string): { host: string; port: number } {
-  const u = new URL(url);
-  return { host: u.hostname, port: Number(u.port) };
-}
 
 const ROOT_NODES = RAW_URLS.split(',')
   .map((u) => u.trim())
