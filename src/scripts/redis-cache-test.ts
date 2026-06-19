@@ -8,75 +8,11 @@
  *   npx ts-node -r tsconfig-paths/register src/scripts/redis-cache-test.ts
  */
 
-import Redis, { Cluster } from 'ioredis';
-import { parseUrl } from 'src/utils/common.utils';
+import { AppSocketUtil } from 'src/events/app-socket.util';
 
-// ---------------------------------------------------------------------------
-// Config
-// ---------------------------------------------------------------------------
-const RAW_URLS =
-  process.env.CACHE_REDIS_URL ||
-  'redis://localhost:6380,redis://localhost:6381,redis://localhost:6382';
-
-const ROOT_NODES = RAW_URLS.split(',')
-  .map((u) => u.trim())
-  .filter(Boolean)
-  .map(parseUrl);
-
-// ---------------------------------------------------------------------------
-// natMap: maps what the cluster announces (container hostname:6379)
-//         back to what the host machine can actually reach (localhost:638x)
-//
-// Each node announces itself as e.g. "redis-master-1:6379" inside Docker.
-// From the host, that resolves to localhost:6380 (via the published port).
-// ioredis uses this map whenever it encounters a cluster-gossip address.
-// ---------------------------------------------------------------------------
-const natMap: Record<string, { host: string; port: number }> = {
-  '172.20.0.11:6379': { host: 'localhost', port: 6380 },
-  '172.20.0.12:6379': { host: 'localhost', port: 6381 },
-  '172.20.0.13:6379': { host: 'localhost', port: 6382 },
-  '172.20.0.21:6379': { host: 'localhost', port: 6383 },
-  '172.20.0.22:6379': { host: 'localhost', port: 6384 },
-  '172.20.0.23:6379': { host: 'localhost', port: 6385 },
-};
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-async function pingNodes(nodes: { host: string; port: number }[]): Promise<void> {
-  console.log('\n🔍 Pinging individual nodes...');
-  for (const { host, port } of nodes) {
-    const client = new Redis({ host, port, connectTimeout: 3_000, lazyConnect: true });
-    try {
-      await client.connect();
-      const pong = await client.ping();
-      console.log(`   ✅ ${host}:${port} → ${pong}`);
-    } catch (err) {
-      console.error(`   ❌ ${host}:${port} → UNREACHABLE:`, (err as Error).message);
-      throw new Error(`Node ${host}:${port} is not reachable. Is the cluster running?`);
-    } finally {
-      client.disconnect();
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Main
-// ---------------------------------------------------------------------------
 async function redisTest() {
   console.log('🔧 Redis Cluster root nodes:');
-  ROOT_NODES.forEach(({ host, port }) => console.log(`   • ${host}:${port}`));
-
-  await pingNodes(ROOT_NODES);
-
-  const cluster: Cluster = new Redis.Cluster(ROOT_NODES, {
-    redisOptions: {
-      connectTimeout: 5_000,
-    },
-    natMap,
-    clusterRetryStrategy: (times) => Math.min(times * 100, 3_000),
-    enableReadyCheck: true,
-  });
+  const cluster = await AppSocketUtil.createCluster();
 
   cluster.on('error', (err) => console.error('❌ [Redis Cluster Error]:', err));
   cluster.on('connect', () => console.log('\n🔌 Redis Cluster: Connecting...'));

@@ -1,10 +1,257 @@
+# ── PORT MAP (no conflict with Redis Cluster on 6380-6385 / 16380-16385) ──────
+#   pubsub-redis-master    → 6390   (172.20.1.11)
+#   pubsub-redis-replica-1 → 6391   (172.20.1.21)
+#   pubsub-redis-replica-2 → 6392   (172.20.1.22)
+#   pubsub-sentinel-1      → 26390  (172.20.1.31)
+#   pubsub-sentinel-2      → 26391  (172.20.1.32)
+#   pubsub-sentinel-3      → 26392  (172.20.1.33)
+
+networks:
+  redis-sentinel-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.1.0/24
+
 services:
-  redis:
-    image: redis:7
-    container_name: redis
-    restart: always
+  # ── REDIS MASTER ─────────────────────────────────────────────────────────────
+  pubsub-redis-master:
+    image: redis:7-alpine
+    container_name: pubsub-redis-master
+    networks:
+      redis-sentinel-net:
+        ipv4_address: 172.20.1.11
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PUBSUB_PASSWORD}
+      - --masterauth
+      - ${REDIS_PUBSUB_PASSWORD}
+      - --bind
+      - '0.0.0.0'
+      - --protected-mode
+      - 'no'
+      - --appendonly
+      - 'yes'
+      - --loglevel
+      - notice
     ports:
-      - '6379:6379'
+      - '6390:6379'
     volumes:
-      - ./devops/redis_data:/data
-    command: redis-server --appendonly yes
+      - ./devops/redis_sentinel/master:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PUBSUB_PASSWORD}', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # ── REDIS REPLICA 1 ──────────────────────────────────────────────────────────
+  pubsub-redis-replica-1:
+    image: redis:7-alpine
+    container_name: pubsub-redis-replica-1
+    networks:
+      redis-sentinel-net:
+        ipv4_address: 172.20.1.21
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PUBSUB_PASSWORD}
+      - --masterauth
+      - ${REDIS_PUBSUB_PASSWORD}
+      - --replicaof
+      - '172.20.1.11'
+      - '6379'
+      - --bind
+      - '0.0.0.0'
+      - --protected-mode
+      - 'no'
+      - --appendonly
+      - 'yes'
+      - --replica-announce-ip
+      - '172.20.1.21'
+      - --replica-announce-port
+      - '6379'
+      - --loglevel
+      - notice
+    ports:
+      - '6391:6379'
+    volumes:
+      - ./devops/redis_sentinel/replica_1:/data
+    depends_on:
+      pubsub-redis-master:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PUBSUB_PASSWORD}', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # ── REDIS REPLICA 2 ──────────────────────────────────────────────────────────
+  pubsub-redis-replica-2:
+    image: redis:7-alpine
+    container_name: pubsub-redis-replica-2
+    networks:
+      redis-sentinel-net:
+        ipv4_address: 172.20.1.22
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PUBSUB_PASSWORD}
+      - --masterauth
+      - ${REDIS_PUBSUB_PASSWORD}
+      - --replicaof
+      - '172.20.1.11'
+      - '6379'
+      - --bind
+      - '0.0.0.0'
+      - --protected-mode
+      - 'no'
+      - --appendonly
+      - 'yes'
+      - --replica-announce-ip
+      - '172.20.1.22'
+      - --replica-announce-port
+      - '6379'
+      - --loglevel
+      - notice
+    ports:
+      - '6392:6379'
+    volumes:
+      - ./devops/redis_sentinel/replica_2:/data
+    depends_on:
+      pubsub-redis-master:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PUBSUB_PASSWORD}', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # ── SENTINEL 1 ───────────────────────────────────────────────────────────────
+  # Sentinel REQUIRES a writable config file on disk to persist state.
+  # There is no way to bypass this — it is hardcoded in the Redis source.
+  #
+  # Solution: entrypoint uses `printf` (not echo/heredoc) to write the config
+  # inside the container before starting sentinel. Password is passed via
+  # `environment:` so Docker never touches it through a shell — it arrives
+  # as a plain env var inside the container, safe for any special characters.
+  #
+  # printf %s avoids ALL shell interpretation of the password value.
+  pubsub-sentinel-1:
+    image: redis:7-alpine
+    container_name: pubsub-sentinel-1
+    networks:
+      redis-sentinel-net:
+        ipv4_address: 172.20.1.31
+    environment:
+      - REDIS_PUBSUB_PASSWORD=${REDIS_PUBSUB_PASSWORD}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        printf '%s\n' \
+          'port 26379' \
+          'sentinel monitor mymaster 172.20.1.11 6379 2' \
+          "sentinel auth-pass mymaster $${REDIS_PUBSUB_PASSWORD}" \
+          'sentinel down-after-milliseconds mymaster 5000' \
+          'sentinel failover-timeout mymaster 10000' \
+          'sentinel parallel-syncs mymaster 1' \
+          'sentinel announce-ip 172.20.1.31' \
+          'sentinel announce-port 26379' \
+          > /tmp/sentinel.conf
+        exec redis-sentinel /tmp/sentinel.conf
+    ports:
+      - '26390:26379'
+    depends_on:
+      pubsub-redis-master:
+        condition: service_healthy
+      pubsub-redis-replica-1:
+        condition: service_healthy
+      pubsub-redis-replica-2:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── SENTINEL 2 ───────────────────────────────────────────────────────────────
+  pubsub-sentinel-2:
+    image: redis:7-alpine
+    container_name: pubsub-sentinel-2
+    networks:
+      redis-sentinel-net:
+        ipv4_address: 172.20.1.32
+    environment:
+      - REDIS_PUBSUB_PASSWORD=${REDIS_PUBSUB_PASSWORD}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        printf '%s\n' \
+          'port 26379' \
+          'sentinel monitor mymaster 172.20.1.11 6379 2' \
+          "sentinel auth-pass mymaster $${REDIS_PUBSUB_PASSWORD}" \
+          'sentinel down-after-milliseconds mymaster 5000' \
+          'sentinel failover-timeout mymaster 10000' \
+          'sentinel parallel-syncs mymaster 1' \
+          'sentinel announce-ip 172.20.1.32' \
+          'sentinel announce-port 26379' \
+          > /tmp/sentinel.conf
+        exec redis-sentinel /tmp/sentinel.conf
+    ports:
+      - '26391:26379'
+    depends_on:
+      pubsub-redis-master:
+        condition: service_healthy
+      pubsub-redis-replica-1:
+        condition: service_healthy
+      pubsub-redis-replica-2:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── SENTINEL 3 ───────────────────────────────────────────────────────────────
+  pubsub-sentinel-3:
+    image: redis:7-alpine
+    container_name: pubsub-sentinel-3
+    networks:
+      redis-sentinel-net:
+        ipv4_address: 172.20.1.33
+    environment:
+      - REDIS_PUBSUB_PASSWORD=${REDIS_PUBSUB_PASSWORD}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        printf '%s\n' \
+          'port 26379' \
+          'sentinel monitor mymaster 172.20.1.11 6379 2' \
+          "sentinel auth-pass mymaster $${REDIS_PUBSUB_PASSWORD}" \
+          'sentinel down-after-milliseconds mymaster 5000' \
+          'sentinel failover-timeout mymaster 10000' \
+          'sentinel parallel-syncs mymaster 1' \
+          'sentinel announce-ip 172.20.1.33' \
+          'sentinel announce-port 26379' \
+          > /tmp/sentinel.conf
+        exec redis-sentinel /tmp/sentinel.conf
+    ports:
+      - '26392:26379'
+    depends_on:
+      pubsub-redis-master:
+        condition: service_healthy
+      pubsub-redis-replica-1:
+        condition: service_healthy
+      pubsub-redis-replica-2:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── REDIS INSIGHT (optional UI) ──────────────────────────────────────────────
+  redis-insight:
+    image: redis/redisinsight:latest
+    container_name: redis-insight
+    ports:
+      - '5540:5540'
+    networks:
+      - redis-sentinel-net
+    depends_on:
+      - pubsub-redis-master
+    restart: unless-stopped

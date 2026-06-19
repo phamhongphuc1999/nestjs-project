@@ -5,7 +5,15 @@ import { AppSocket, TOKEN_TYPE } from 'src/types/global';
 import { parseUrl } from 'src/utils/common.utils';
 import { verifyToken } from 'src/utils/jwt';
 
-const natMap: Record<string, { host: string; port: number }> = {
+// ---------------------------------------------------------------------------
+// clusterNatMap: maps what the cluster announces (container hostname:6379)
+//         back to what the host machine can actually reach (localhost:638x)
+//
+// Each node announces itself as e.g. "redis-master-1:6379" inside Docker.
+// From the host, that resolves to localhost:6380 (via the published port).
+// ioredis uses this map whenever it encounters a cluster-gossip address.
+// ---------------------------------------------------------------------------
+const clusterNatMap: Record<string, { host: string; port: number }> = {
   '172.20.0.11:6379': { host: 'localhost', port: 6380 },
   '172.20.0.12:6379': { host: 'localhost', port: 6381 },
   '172.20.0.13:6379': { host: 'localhost', port: 6382 },
@@ -13,6 +21,23 @@ const natMap: Record<string, { host: string; port: number }> = {
   '172.20.0.22:6379': { host: 'localhost', port: 6384 },
   '172.20.0.23:6379': { host: 'localhost', port: 6385 },
 };
+
+async function pingNodes(nodes: { host: string; port: number }[]): Promise<void> {
+  console.log('\n🔍 Pinging individual nodes...');
+  for (const { host, port } of nodes) {
+    const client = new Redis({ host, port, connectTimeout: 3_000, lazyConnect: true });
+    try {
+      await client.connect();
+      const pong = await client.ping();
+      console.log(`✅ ${host}:${port} → ${pong}`);
+    } catch (err) {
+      console.error(`❌ ${host}:${port} → UNREACHABLE:`, (err as Error).message);
+      throw new Error(`Node ${host}:${port} is not reachable. Is the cluster running?`);
+    } finally {
+      client.disconnect();
+    }
+  }
+}
 
 export class AppSocketUtil {
   static conversationRoom(conversationId: number): string {
@@ -45,33 +70,16 @@ export class AppSocketUtil {
     return id;
   }
 
-  static async pingNodes(nodes: { host: string; port: number }[]): Promise<void> {
-    console.log('\n🔍 Pinging individual nodes...');
-    for (const { host, port } of nodes) {
-      const client = new Redis({ host, port, connectTimeout: 3_000, lazyConnect: true });
-      try {
-        await client.connect();
-        const pong = await client.ping();
-        console.log(`   ✅ ${host}:${port} → ${pong}`);
-      } catch (err) {
-        console.error(`   ❌ ${host}:${port} → UNREACHABLE:`, (err as Error).message);
-        throw new Error(`Node ${host}:${port} is not reachable. Is the cluster running?`);
-      } finally {
-        client.disconnect();
-      }
-    }
-  }
-
   static async createCluster() {
     const rootNodes = AppConfigs.CACHE_REDIS_URL.split(',')
       .map((u) => u.trim())
       .filter(Boolean)
       .map(parseUrl);
     rootNodes.forEach(({ host, port }) => console.log(`   • ${host}:${port}`));
-    await this.pingNodes(rootNodes);
+    await pingNodes(rootNodes);
     const cluster: Cluster = new Redis.Cluster(rootNodes, {
       redisOptions: { connectTimeout: 5_000 },
-      natMap,
+      natMap: clusterNatMap,
       clusterRetryStrategy: (times) => Math.min(times * 100, 3_000),
       enableReadyCheck: true,
     });

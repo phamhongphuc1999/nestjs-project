@@ -1,0 +1,49 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="fundamental-structure" id="tvgFJHIuAr1lFWsHbDiu">
+    <mxGraphModel dx="1184" dy="815" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="kKzCey44akwB4MwiO_QO-3" edge="1" parent="1" source="kKzCey44akwB4MwiO_QO-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="kKzCey44akwB4MwiO_QO-2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kKzCey44akwB4MwiO_QO-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fad7ac;strokeColor=#b46504;" value="&lt;b&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;TCP Connection&lt;/font&gt;&lt;/b&gt;&lt;div&gt;epoll/kqueue - connection pool - pipeline&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="240" x="160" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="kKzCey44akwB4MwiO_QO-5" edge="1" parent="1" source="kKzCey44akwB4MwiO_QO-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="kKzCey44akwB4MwiO_QO-4" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kKzCey44akwB4MwiO_QO-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fad7ac;strokeColor=#b46504;" value="&lt;div&gt;&lt;span style=&quot;font-size: 14px;&quot;&gt;&lt;b&gt;REPS Protocol &amp;amp; Parser&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;RESP2 - RESP3 - inline-multi-bulk&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="240" x="160" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="kKzCey44akwB4MwiO_QO-7" edge="1" parent="1" source="kKzCey44akwB4MwiO_QO-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="kKzCey44akwB4MwiO_QO-6" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kKzCey44akwB4MwiO_QO-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fad7ac;strokeColor=#b46504;" value="&lt;div&gt;&lt;span style=&quot;font-size: 14px;&quot;&gt;&lt;b&gt;ae Event Loop&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;single-thread - I/O multilex - timer events&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="240" x="160" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="kKzCey44akwB4MwiO_QO-11" edge="1" parent="1" source="kKzCey44akwB4MwiO_QO-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="kKzCey44akwB4MwiO_QO-8" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kKzCey44akwB4MwiO_QO-6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fad7ac;strokeColor=#b46504;" value="&lt;div&gt;&lt;span style=&quot;font-size: 14px;&quot;&gt;&lt;b&gt;Data Structure + Encoding&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;sds - dict - listpack - quicklist - skplist - intset - ziplist&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="240" x="160" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="kKzCey44akwB4MwiO_QO-12" edge="1" parent="1" source="kKzCey44akwB4MwiO_QO-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="kKzCey44akwB4MwiO_QO-9" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kKzCey44akwB4MwiO_QO-8" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fad7ac;strokeColor=#b46504;" value="&lt;div&gt;&lt;span style=&quot;font-size: 14px;&quot;&gt;&lt;b&gt;Memory &amp;amp; Key Expiry&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;jemalloc - lazy expiry - active cycle&amp;nbsp;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="240" x="160" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="kKzCey44akwB4MwiO_QO-13" edge="1" parent="1" source="kKzCey44akwB4MwiO_QO-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="kKzCey44akwB4MwiO_QO-10" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kKzCey44akwB4MwiO_QO-9" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fad7ac;strokeColor=#b46504;" value="&lt;div&gt;&lt;span style=&quot;font-size: 14px;&quot;&gt;&lt;b&gt;Persistence (RDB / AOF)&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;fork + COW - fsync: always/everysce/no&amp;nbsp;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="240" x="160" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="kKzCey44akwB4MwiO_QO-10" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fad7ac;strokeColor=#b46504;" value="&lt;div&gt;&lt;span style=&quot;font-size: 14px;&quot;&gt;&lt;b&gt;Reply -&amp;gt; TCP Socket&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;reply buffer - write handler - TCP send&amp;nbsp;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="240" x="160" y="680" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

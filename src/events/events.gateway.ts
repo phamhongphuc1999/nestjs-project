@@ -13,10 +13,8 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { createAdapter } from '@socket.io/redis-adapter';
-import { Cluster } from 'ioredis';
-import { createClient, RedisClientType } from 'redis';
+import Redis, { Cluster } from 'ioredis';
 import { Server } from 'socket.io';
-import { AppConfigs } from 'src/configs/app.config';
 import { MICROSERVICE_EVENTS } from 'src/configs/enum.config';
 import { ConversationParticipantRepository } from 'src/repository/conversation-participants.repository';
 import { ConversationRepository } from 'src/repository/conversation.repository';
@@ -30,13 +28,14 @@ import {
   TypingMessagePayload,
 } from 'src/types/global';
 import { AppSocketUtil } from './app-socket.util';
+import { createSteamClients } from './redis-sentinel.util';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class EventsGateway implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(EventsGateway.name);
   private redisClient?: Cluster;
-  private redisPubClient?: RedisClientType;
-  private redisSubClient?: RedisClientType;
+  private redisPubClient?: Redis | null;
+  private redisSubClient?: Redis | null;
 
   constructor(
     private readonly participantsRepository: ConversationParticipantRepository,
@@ -60,15 +59,9 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
       );
       await this.redisClient.connect();
 
-      this.redisPubClient = createClient({ url: AppConfigs.STREAM_REDIS_URL });
-      this.redisSubClient = this.redisPubClient.duplicate();
-      this.redisPubClient.on('error', (error) =>
-        this.logger.warn(`Redis pub error: ${String(error)}`),
-      );
-      this.redisSubClient.on('error', (error) =>
-        this.logger.warn(`Redis sub error: ${String(error)}`),
-      );
-      await Promise.all([this.redisPubClient.connect(), this.redisSubClient.connect()]);
+      const { subscriber, publisher } = await createSteamClients();
+      this.redisPubClient = publisher;
+      this.redisSubClient = subscriber;
     } catch (error) {
       this.logger.warn(
         `Redis unavailable, socket will work without cache/adapter: ${(error as Error).message}`,
@@ -81,8 +74,8 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
 
   onModuleDestroy() {
     this.redisClient?.disconnect();
-    this.redisPubClient?.destroy();
-    this.redisSubClient?.destroy();
+    this.redisPubClient?.disconnect();
+    this.redisSubClient?.disconnect();
   }
 
   private async isParticipant(conversationId: number, userId: number): Promise<boolean> {

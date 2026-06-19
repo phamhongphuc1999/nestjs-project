@@ -34,3 +34,7 @@ export function parseUrl(url: string): { host: string; port: number } {
   const u = new URL(url);
   return { host: u.hostname, port: Number(u.port) };
 }
+
+export function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}

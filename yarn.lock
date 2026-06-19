@@ -6715,7 +6715,7 @@ readdirp@^4.0.1:
   resolved "https://registry.npmjs.org/readdirp/-/readdirp-4.1.2.tgz"
   integrity sha512-GDhwkLfywWL2s6vEjyhri+eXmfH6j1L7JE27WhqLeYzoh/A3DBaYGEj2H/HFZCn/kMfim73FXxEJTw06WtxQwg==
 
-"redis@^3.1.1 || ^4.0.0 || ^5.0.14", redis@^5.11.0:
+"redis@^3.1.1 || ^4.0.0 || ^5.0.14":
   version "5.12.1"
   resolved "https://registry.npmjs.org/redis/-/redis-5.12.1.tgz"
   integrity sha512-LDsoVvb/CpoV9EN3FXvgvSHNJWuCIzl9MiO3ppOevuGLpSGJhwfQjpEwfFJcQvNSddHADDdZaWx0HnmMxRXG7g==
