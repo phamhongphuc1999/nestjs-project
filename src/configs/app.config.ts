@@ -1,6 +1,12 @@
 import 'dotenv/config';
 import { NodeEnvType } from 'src/types/global';
 
+function requireEnv(key: string): string {
+  const value = process.env[key];
+  if (!value) throw new Error(`Missing required environment variable: ${key}`);
+  return value;
+}
+
 const AppConfigs = {
   NODE_ENV: (process.env.NODE_ENV || NodeEnvType.DEVELOPMENT) as NodeEnvType,
   DATABASE: {
@@ -17,12 +23,12 @@ const AppConfigs = {
     USER: process.env.MAIL_USER,
     PASSWORD: process.env.MAIL_PASSWORD,
   },
-  JWT_SECRET: process.env.JWT_SECRET || '',
-  JWT_EXPIRE_TIME: process.env.JWT_EXPIRE_TIME || '',
-  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || '',
-  JWT_REFRESH_EXPIRE_TIME: process.env.JWT_REFRESH_EXPIRE_TIME || '',
-  EMAIL_VERIFY_SECRET: process.env.EMAIL_VERIFY_SECRET || '',
-  EMAIL_VERIFY_EXPIRE_TIME: process.env.EMAIL_VERIFY_EXPIRE_TIME || '',
+  JWT_SECRET: requireEnv('JWT_SECRET'),
+  JWT_EXPIRE_TIME: requireEnv('JWT_EXPIRE_TIME'),
+  JWT_REFRESH_SECRET: requireEnv('JWT_REFRESH_SECRET'),
+  JWT_REFRESH_EXPIRE_TIME: requireEnv('JWT_REFRESH_EXPIRE_TIME'),
+  EMAIL_VERIFY_SECRET: requireEnv('EMAIL_VERIFY_SECRET'),
+  EMAIL_VERIFY_EXPIRE_TIME: requireEnv('EMAIL_VERIFY_EXPIRE_TIME'),
   FRONTEND_URL: process.env.FRONTEND_URL || '',
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
   STREAM_REDIS_URL: process.env.STREAM_REDIS_URL || '',

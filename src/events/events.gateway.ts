@@ -78,8 +78,17 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
     this.redisSubClient?.disconnect();
   }
 
+  private participantCacheKey(conversationId: number) {
+    return `conversation:${conversationId}:participants`;
+  }
+
+  async invalidateParticipantCache(conversationId: number, userId: number) {
+    if (this.redisClient)
+      await this.redisClient.srem(this.participantCacheKey(conversationId), String(userId));
+  }
+
   private async isParticipant(conversationId: number, userId: number): Promise<boolean> {
-    const cacheKey = `conversation:${conversationId}:participants`;
+    const cacheKey = this.participantCacheKey(conversationId);
     if (this.redisClient) {
       const cached = await this.redisClient.sismember(cacheKey, String(userId));
       if (cached) return true;
@@ -110,7 +119,7 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
       }
       this.logger.debug(`Socket ${client.id} auto-joined ${participantRecords.length} rooms`);
     } catch {
-      // Socket will fail auth on first subscribe if token is invalid
+      client.disconnect();
     }
   }
 
@@ -218,7 +227,9 @@ export class EventsGateway implements OnModuleInit, OnModuleDestroy {
     const messageContent = (content ?? '').trim();
     if (!messageContent) throw new BadRequestException('Message is empty');
     const oldMessage = await this.messageRepository.findOneBy({ id: data.messageId });
-    if (oldMessage?.content != messageContent) {
+    if (!oldMessage) throw new BadRequestException('Message not found');
+    if (oldMessage.senderId !== userId) throw new ForbiddenException('Cannot edit this message');
+    if (oldMessage.content != messageContent) {
       await this.messageRepository.update(
         { id: data.messageId },
         { content: messageContent, type: MESSAGE_TYPE.EDIT_TEXT },

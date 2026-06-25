@@ -26,10 +26,10 @@ export class AuthService {
   ) {}
 
   async signup(payload: AuthSignupDto): Promise<OnlyOkResponseDto> {
-    const _tempUser = await this.userRepository.findOne({
-      where: [{ name: payload.name }, { email: payload.email }],
-    });
-    if (_tempUser != undefined) throw new BadRequestException('Email is already exist');
+    const existingByEmail = await this.userRepository.findOneBy({ email: payload.email });
+    if (existingByEmail) throw new BadRequestException('Email is already exist');
+    const existingByName = await this.userRepository.findOneBy({ name: payload.name });
+    if (existingByName) throw new BadRequestException('Username is already taken');
     const hashPassword = await generatePasswordHash(payload.password);
     const newUser: User = this.userRepository.create({
       name: payload.name,
@@ -111,7 +111,7 @@ export class AuthService {
     if (!isRefreshTokenOk) throw new UnauthorizedException();
 
     const newAccessToken = generateToken(TOKEN_TYPE.ACCESS_TOKEN, payload);
-    const newRefreshToken = generateToken(TOKEN_TYPE.REFRESH_TOKEN, payload);
+    const newRefreshToken = await this.createRefreshToken(findUser.id, payload);
 
     return { accessToken: newAccessToken, refreshToken: newRefreshToken };
   }

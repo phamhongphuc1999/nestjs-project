@@ -39,6 +39,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    restart: unless-stopped
 
   redis-master-2:
     image: redis:7-alpine
@@ -72,6 +73,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    restart: unless-stopped
 
   redis-master-3:
     image: redis:7-alpine
@@ -105,6 +107,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    restart: unless-stopped
 
   redis-replica-1:
     image: redis:7-alpine
@@ -138,6 +141,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    restart: unless-stopped
 
   redis-replica-2:
     image: redis:7-alpine
@@ -171,6 +175,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    restart: unless-stopped
 
   redis-replica-3:
     image: redis:7-alpine
@@ -204,37 +209,4 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
-
-  redis-cluster-init:
-    image: redis:7-alpine
-    container_name: redis-cluster-init
-    networks:
-      - redis-cluster-net
-    depends_on:
-      redis-master-1:
-        condition: service_healthy
-      redis-master-2:
-        condition: service_healthy
-      redis-master-3:
-        condition: service_healthy
-      redis-replica-1:
-        condition: service_healthy
-      redis-replica-2:
-        condition: service_healthy
-      redis-replica-3:
-        condition: service_healthy
-    entrypoint: []
-    command:
-      - redis-cli
-      - --cluster
-      - create
-      - '172.20.0.11:6379'
-      - '172.20.0.12:6379'
-      - '172.20.0.13:6379'
-      - '172.20.0.21:6379'
-      - '172.20.0.22:6379'
-      - '172.20.0.23:6379'
-      - --cluster-replicas
-      - '1'
-      - --cluster-yes
-    restart: on-failure
+    restart: unless-stopped

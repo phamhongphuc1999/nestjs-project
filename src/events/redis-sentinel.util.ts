@@ -183,23 +183,17 @@ export async function testMasterDiscovery(): Promise<void> {
   console.log(`  ✅ All ${count} sentinels agree: ${addr} → host ${mapped?.host}:${mapped?.port}`);
 }
 
-export async function createSteamClients() {
-  let subscriber: Redis | null = null;
-  let publisher: Redis | null = null;
+export async function createSteamClients(): Promise<{ subscriber: Redis; publisher: Redis }> {
   try {
     await testSentinelConnectivity();
     await testMasterDiscovery();
-    subscriber = await createDirectClient('sub');
-    publisher = await createDirectClient('pub');
+    const subscriber = await createDirectClient('sub');
+    const publisher = await createDirectClient('pub');
+    return { subscriber, publisher };
   } catch (error) {
     console.error('\n═══════════════════════════════════════════════════════');
-    console.error('  💥 Test failed:', (error as Error).message);
+    console.error('  💥 Redis Sentinel setup failed:', (error as Error).message);
     console.error('═══════════════════════════════════════════════════════');
-    process.exitCode = 1;
-  } finally {
-    subscriber?.disconnect();
-    publisher?.disconnect();
-    console.log('\n👋 Done.');
+    throw error;
   }
-  return { subscriber, publisher };
 }

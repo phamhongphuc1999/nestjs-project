@@ -1,4 +1,19 @@
-## Nestjs project
+## NestJS project
+
+### Makefile commands
+
+The project uses a `Makefile` to manage Redis Cluster (cache) and Redis Sentinel (pubsub/stream) stacks.
+
+| Command                                   | Description                                                     |
+| ----------------------------------------- | --------------------------------------------------------------- |
+| `make setup`                              | First-time setup: bring up both stacks + initialize the cluster |
+| `make up`                                 | Start both stacks                                               |
+| `make down`                               | Stop both stacks, keep data                                     |
+| `make destroy`                            | Stop both stacks + delete all data                              |
+| `make cache-up` / `make cache-down`       | Start / stop Redis Cluster only                                 |
+| `make sentinel-up` / `make sentinel-down` | Start / stop Redis Sentinel only                                |
+| `make init`                               | Manually (re-)initialize the Redis Cluster                      |
+| `make cluster-info`                       | Check cluster status                                            |
 
 ### Create and connect to local services
 
@@ -8,16 +23,10 @@
 docker compose up -d
 ```
 
-- create redis cache service (redis cluster)
+- create Redis cache service (Redis cluster) and Redis stream service (Redis sentinel)
 
 ```bash
-docker compose -f redis-cache.docker-compose.yaml up -d
-```
-
-- create redis stream service (redis sentinel)
-
-```bash
-docker compose -f redis-stream.docker-compose.yaml up -d
+docker compose -f redis-cache.docker-compose.yaml -f redis-stream.docker-compose.yaml up -d
 ```
 
 ### Run scripts
